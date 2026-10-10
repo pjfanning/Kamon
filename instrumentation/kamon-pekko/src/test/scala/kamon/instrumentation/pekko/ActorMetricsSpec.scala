@@ -143,7 +143,7 @@ class ActorMetricsSpec extends TestKit(ActorSystem("ActorMetricsSpec")) with Sto
   trait ActorMetricsFixtures {
 
     def createTestActor(name: String, resetState: Boolean = false): ActorRef = {
-      val actor = system.actorOf(Props[ActorMetricsTestActor], name)
+      val actor = system.actorOf(Props[ActorMetricsTestActor](), name)
       val initialiseListener = TestProbe()
 
       // Ensure that the router has been created before returning.

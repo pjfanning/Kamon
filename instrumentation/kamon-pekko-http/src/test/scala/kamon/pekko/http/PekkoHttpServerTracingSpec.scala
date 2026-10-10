@@ -29,7 +29,7 @@ import org.scalatest.wordspec.AnyWordSpecLike
 import java.util.UUID
 import javax.net.ssl.{HostnameVerifier, SSLSession}
 import scala.concurrent.duration._
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 

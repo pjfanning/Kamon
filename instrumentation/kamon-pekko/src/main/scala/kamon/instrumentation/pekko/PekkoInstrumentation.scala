@@ -5,7 +5,7 @@ import kamon.Kamon
 import kamon.instrumentation.pekko.PekkoInstrumentation.AskPatternTimeoutWarningSetting.{Heavyweight, Lightweight, Off}
 import kamon.util.Filter
 
-import scala.collection.JavaConverters.{asScalaBufferConverter, asScalaSetConverter}
+import scala.jdk.CollectionConverters._
 
 object PekkoInstrumentation {
 

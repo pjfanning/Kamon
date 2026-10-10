@@ -119,7 +119,7 @@ class ActorGroupMetricsSpec extends TestKit(ActorSystem("ActorGroupMetricsSpec")
     }
 
     "cleanup pending-messages metric on member shutdown there are messages still being sent to the members" in new ActorGroupMetricsFixtures {
-      val parent = watch(system.actorOf(Props[SecondLevelGrouping], "second-level-group"))
+      val parent = watch(system.actorOf(Props[SecondLevelGrouping](), "second-level-group"))
 
       eventually {
         val memberCountDistribution = GroupMembers.withTags(groupTags("second-level-group")).distribution()
@@ -161,7 +161,7 @@ class ActorGroupMetricsSpec extends TestKit(ActorSystem("ActorGroupMetricsSpec")
 
   trait ActorGroupMetricsFixtures {
     def createTestActor(name: String): ActorRef = {
-      val actor = system.actorOf(Props[ActorMetricsTestActor], name)
+      val actor = system.actorOf(Props[ActorMetricsTestActor](), name)
       val initialiseListener = TestProbe()
 
       // Ensure that the actor has been created before returning.
@@ -172,7 +172,7 @@ class ActorGroupMetricsSpec extends TestKit(ActorSystem("ActorGroupMetricsSpec")
     }
 
     def createTestPoolRouter(routerName: String): ActorRef = {
-      val router = system.actorOf(RoundRobinPool(5).props(Props[RouterMetricsTestActor]), routerName)
+      val router = system.actorOf(RoundRobinPool(5).props(Props[RouterMetricsTestActor]()), routerName)
       val initialiseListener = TestProbe()
 
       // Ensure that the router has been created before returning.
@@ -185,7 +185,7 @@ class ActorGroupMetricsSpec extends TestKit(ActorSystem("ActorGroupMetricsSpec")
 }
 
 class SecondLevelGrouping extends Actor {
-  (1 to 10).foreach(id => context.actorOf(Props[ActorMetricsTestActor], s"child-$id"))
+  (1 to 10).foreach(id => context.actorOf(Props[ActorMetricsTestActor](), s"child-$id"))
 
   def receive: Actor.Receive = {
     case any => Random.shuffle(context.children).headOption.foreach(_.forward(any))

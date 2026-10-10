@@ -48,7 +48,7 @@ class ActorCellInstrumentationSpec extends TestKit(ActorSystem("ActorCellInstrum
 
     "capture and propagate the current context for messages sent when the target actor might be a repointable ref" in {
       for (_ <- 1 to 100) {
-        val ta = system.actorOf(Props[ContextStringEcho])
+        val ta = system.actorOf(Props[ContextStringEcho]())
         Kamon.runWithContext(testContext("propagate-with-tell")) {
           ta.tell("test", testActor)
         }
@@ -98,7 +98,7 @@ class ActorCellInstrumentationSpec extends TestKit(ActorSystem("ActorCellInstrum
 
       for (j <- 1 to 10) {
         for (i <- 1 to 1000) {
-          val a = system.actorOf(Props[ContextStringEcho], s"repointable-$j-$i")
+          val a = system.actorOf(Props[ContextStringEcho](), s"repointable-$j-$i")
           a ! PoisonPill
           trackedActors.append(actorPathTag(a))
         }
@@ -121,13 +121,13 @@ class ActorCellInstrumentationSpec extends TestKit(ActorSystem("ActorCellInstrum
   }
 
   trait EchoActorFixture {
-    val contextEchoActor = system.actorOf(Props[ContextStringEcho])
+    val contextEchoActor = system.actorOf(Props[ContextStringEcho]())
   }
 
   trait EchoSimpleRouterFixture {
     val router = {
       val routees = Vector.fill(5) {
-        val r = system.actorOf(Props[ContextStringEcho])
+        val r = system.actorOf(Props[ContextStringEcho]())
         ActorRefRoutee(r)
       }
       Router(RoundRobinRoutingLogic(), routees)
@@ -135,12 +135,12 @@ class ActorCellInstrumentationSpec extends TestKit(ActorSystem("ActorCellInstrum
   }
 
   trait EchoPoolRouterFixture {
-    val pool = system.actorOf(RoundRobinPool(nrOfInstances = 5).props(Props[ContextStringEcho]), "pool-router")
+    val pool = system.actorOf(RoundRobinPool(nrOfInstances = 5).props(Props[ContextStringEcho]()), "pool-router")
   }
 
   trait EchoGroupRouterFixture {
     val routees = Vector.fill(5) {
-      system.actorOf(Props[ContextStringEcho])
+      system.actorOf(Props[ContextStringEcho]())
     }
 
     val group = system.actorOf(RoundRobinGroup(routees.map(_.path.toStringWithoutAddress)).props(), "group-router")
@@ -152,6 +152,6 @@ class ContextStringEcho extends Actor {
 
   def receive = {
     case _: String =>
-      sender ! Kamon.currentContext().getTag(plain(TestKey))
+      sender() ! Kamon.currentContext().getTag(plain(TestKey))
   }
 }

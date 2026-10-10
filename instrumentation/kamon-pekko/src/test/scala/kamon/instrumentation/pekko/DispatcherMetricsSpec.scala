@@ -71,7 +71,7 @@ class DispatcherMetricsSpec extends TestKit(ActorSystem("DispatcherMetricsSpec")
         .filter(_.get(plain("pekko.system")) == system.name)
         .map(_.get(plain("name")))
 
-      instrumentExecutorsWithSystem should contain only (trackedDispatchers: _*)
+      instrumentExecutorsWithSystem.should(contain).only(trackedDispatchers: _*)
     }
 
     "clean up the metrics recorders after a dispatcher is shutdown" in {
@@ -83,7 +83,7 @@ class DispatcherMetricsSpec extends TestKit(ActorSystem("DispatcherMetricsSpec")
 
     "play nicely when dispatchers are looked up from a BalancingPool router" in {
       val balancingPoolRouter =
-        system.actorOf(BalancingPool(5).props(Props[RouterMetricsTestActor]), "test-balancing-pool")
+        system.actorOf(BalancingPool(5).props(Props[RouterMetricsTestActor]()), "test-balancing-pool")
       balancingPoolRouter ! Ping
       expectMsg(Pong)
 
@@ -98,7 +98,7 @@ class DispatcherMetricsSpec extends TestKit(ActorSystem("DispatcherMetricsSpec")
         .filter(_.get(plain("pekko.system")) == system.name)
         .map(_.get(plain("name")))
 
-      instrumentExecutorsWithSystem should contain only (builtInDispatchers: _*)
+      instrumentExecutorsWithSystem.should(contain).only(builtInDispatchers: _*)
       Await.result(system.terminate(), 5 seconds)
     }
 
@@ -114,7 +114,7 @@ class DispatcherMetricsSpec extends TestKit(ActorSystem("DispatcherMetricsSpec")
       if (builtInWithoutDefaultDispatcher.isEmpty)
         instrumentExecutorsWithSystem shouldBe empty
       else
-        instrumentExecutorsWithSystem should contain only (builtInWithoutDefaultDispatcher: _*)
+        instrumentExecutorsWithSystem.should(contain).only(builtInWithoutDefaultDispatcher: _*)
 
       Await.result(system.terminate(), 5 seconds)
     }

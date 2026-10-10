@@ -27,7 +27,7 @@ class ActorMetricsTestActor extends Actor {
     case Discard =>
     case Die     => context.stop(self)
     case Fail    => throw new ArithmeticException("Division by zero.")
-    case Ping    => sender ! Pong
+    case Ping    => sender() ! Pong
     case Block(forDuration) =>
       Thread.sleep(forDuration.toMillis)
     case BlockAndDie(forDuration) =>
@@ -38,7 +38,7 @@ class ActorMetricsTestActor extends Actor {
       sleep.map(s => Thread.sleep(s.toMillis))
       val afterReceiveTimestamp = Kamon.clock().nanos()
 
-      sender ! TrackedTimings(sendTimestamp, dequeueTimestamp, afterReceiveTimestamp)
+      sender() ! TrackedTimings(sendTimestamp, dequeueTimestamp, afterReceiveTimestamp)
     }
   }
 }

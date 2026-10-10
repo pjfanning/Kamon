@@ -32,7 +32,7 @@ class ActorLoggingInstrumentationSpec extends TestKit(ActorSystem("ActorCellInst
 
   "the ActorLogging instrumentation" should {
     "capture the current context and attach it to log events" in {
-      val loggerActor = system.actorOf(Props[LoggerActor])
+      val loggerActor = system.actorOf(Props[LoggerActor]())
       Kamon.runWithContext(testContext("propagate-when-logging")) {
         loggerActor ! "info"
       }

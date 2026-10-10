@@ -41,7 +41,7 @@ class AskPatternInstrumentationSpec extends TestKit(ActorSystem("AskPatternInstr
   "the AskPatternInstrumentation" when {
     "configured in heavyweight mode" should {
       "log a warning with a full stack trace and the context captured the moment when the ask was triggered for an actor" in {
-        val noReplyActorRef = system.actorOf(Props[NoReply], "no-reply-1")
+        val noReplyActorRef = system.actorOf(Props[NoReply](), "no-reply-1")
         setAskPatternTimeoutWarningMode("heavyweight")
 
         EventFilter.warning(start = "Timeout triggered for ask pattern to actor [no-reply-1] at").intercept {
@@ -54,7 +54,7 @@ class AskPatternInstrumentationSpec extends TestKit(ActorSystem("AskPatternInstr
 
     "configured in lightweight mode" should {
       "log a warning with a short source location description and the context taken from the moment the ask was triggered for a actor" in {
-        val noReplyActorRef = system.actorOf(Props[NoReply], "no-reply-2")
+        val noReplyActorRef = system.actorOf(Props[NoReply](), "no-reply-2")
         setAskPatternTimeoutWarningMode("lightweight")
 
         EventFilter.warning(start = "Timeout triggered for ask pattern to actor [no-reply-2] at").intercept {
@@ -67,7 +67,7 @@ class AskPatternInstrumentationSpec extends TestKit(ActorSystem("AskPatternInstr
 
     "configured in off mode" should {
       "should not log any warning messages" in {
-        val noReplyActorRef = system.actorOf(Props[NoReply], "no-reply-3")
+        val noReplyActorRef = system.actorOf(Props[NoReply](), "no-reply-3")
         setAskPatternTimeoutWarningMode("off")
 
         intercept[AssertionError] { // No message will be logged and the event filter will fail.

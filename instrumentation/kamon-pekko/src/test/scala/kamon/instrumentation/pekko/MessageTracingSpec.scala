@@ -30,8 +30,8 @@ class MessageTracingSpec extends TestKit(ActorSystem("MessageTracing")) with Sto
 
   "Message tracing instrumentation" should {
     "skip filtered out actors" in {
-      val traced = system.actorOf(Props[TracingTestActor], "traced-probe-1")
-      val nonTraced = system.actorOf(Props[TracingTestActor], "filteredout")
+      val traced = system.actorOf(Props[TracingTestActor](), "traced-probe-1")
+      val nonTraced = system.actorOf(Props[TracingTestActor](), "filteredout")
       nonTraced ! "ping"
       expectMsg("pong")
 
@@ -49,7 +49,7 @@ class MessageTracingSpec extends TestKit(ActorSystem("MessageTracing")) with Sto
     }
 
     "construct span for traced actors" in {
-      val traced = system.actorOf(Props[TracingTestActor], "traced")
+      val traced = system.actorOf(Props[TracingTestActor](), "traced")
       traced ! "ping"
       expectMsg("pong")
 
@@ -80,8 +80,8 @@ class MessageTracingSpec extends TestKit(ActorSystem("MessageTracing")) with Sto
     }
 
     "create child spans for messages between traced actors" in {
-      val first = system.actorOf(Props[TracingTestActor], "traced-first")
-      val second = system.actorOf(Props[TracingTestActor], "traced-second")
+      val first = system.actorOf(Props[TracingTestActor](), "traced-first")
+      val second = system.actorOf(Props[TracingTestActor](), "traced-second")
 
       first ! second
       expectMsg("pong")
@@ -114,9 +114,9 @@ class MessageTracingSpec extends TestKit(ActorSystem("MessageTracing")) with Sto
     }
 
     "create hierarchy of spans even across propagation-only actors" in {
-      val first = system.actorOf(Props[TracingTestActor], "traced-chain-first")
-      val nonInstrumented = system.actorOf(Props[TracingTestActor], "filteredout-middle")
-      val last = system.actorOf(Props[TracingTestActor], "traced-chain-last")
+      val first = system.actorOf(Props[TracingTestActor](), "traced-chain-first")
+      val nonInstrumented = system.actorOf(Props[TracingTestActor](), "filteredout-middle")
+      val last = system.actorOf(Props[TracingTestActor](), "traced-chain-last")
 
       first ! (nonInstrumented, last)
       expectMsg("pong")
@@ -150,7 +150,7 @@ class MessageTracingSpec extends TestKit(ActorSystem("MessageTracing")) with Sto
     }
 
     "create actor message spans when behind a group router " in {
-      val routee = system.actorOf(Props[TracingTestActor], "traced-routee-one")
+      val routee = system.actorOf(Props[TracingTestActor](), "traced-routee-one")
       val router =
         system.actorOf(RoundRobinGroup(Vector(routee.path.toStringWithoutAddress)).props(), "nontraced-group-router")
 
@@ -166,7 +166,7 @@ class MessageTracingSpec extends TestKit(ActorSystem("MessageTracing")) with Sto
     }
 
     "create actor message spans when behind a pool router" in {
-      val router = system.actorOf(Props[TracingTestActor].withRouter(RoundRobinPool(2)), "traced-pool-router")
+      val router = system.actorOf(Props[TracingTestActor]().withRouter(RoundRobinPool(2)), "traced-pool-router")
 
       router ! "ping-and-wait"
       expectMsg("pong")
@@ -180,7 +180,7 @@ class MessageTracingSpec extends TestKit(ActorSystem("MessageTracing")) with Sto
 
     "not track Pekko Streams actors" in {
       implicit val timeout: Timeout = Timeout(10 seconds)
-      val actorWithMaterializer = system.actorOf(Props[ActorWithMaterializer])
+      val actorWithMaterializer = system.actorOf(Props[ActorWithMaterializer]())
 
       val _ = Kamon.runWithSpan(Kamon.serverSpanBuilder("wrapper", "test").start()) {
         actorWithMaterializer.ask("stream").mapTo[String]
@@ -214,11 +214,11 @@ class TracingTestActor extends Actor {
       forwardTo.forward("ping-and-wait")
 
     case "ping" =>
-      sender ! "pong"
+      sender() ! "pong"
 
     case "ping-and-wait" =>
       Thread.sleep(50)
-      sender ! "pong"
+      sender() ! "pong"
   }
 }
 
