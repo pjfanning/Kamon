@@ -66,12 +66,17 @@ class RouterMetricsSpec extends TestKit(ActorSystem("RouterMetricsSpec")) with A
 
       router.tell(RouterTrackTimings(sleep = Some(1 second)), timingsListener.ref)
       val timings = timingsListener.expectMsgType[RouterTrackedTimings]
-      val processingTimeDistribution = RouterProcessingTime
-        .withTags(routerTags("RouterMetricsSpec/user/measuring-processing-time-in-pool-router")).distribution()
 
-      processingTimeDistribution.count should be(1L)
-      processingTimeDistribution.buckets.head.frequency should be(1L)
-      processingTimeDistribution.buckets.head.value should be(timings.approximateProcessingTime +- 10.millis.toNanos)
+      // The processing time is recorded after receive returns, which can be after the reply has arrived
+      eventually {
+        val processingTimeDistribution = RouterProcessingTime
+          .withTags(routerTags("RouterMetricsSpec/user/measuring-processing-time-in-pool-router"))
+          .distribution(resetState = false)
+
+        processingTimeDistribution.count should be(1L)
+        processingTimeDistribution.buckets.head.frequency should be(1L)
+        processingTimeDistribution.buckets.head.value should be(timings.approximateProcessingTime +- 10.millis.toNanos)
+      }
     }
 
     "record the number of errors for pool routers" in new RouterMetricsFixtures {
@@ -311,6 +316,13 @@ class RouterMetricsSpec extends TestKit(ActorSystem("RouterMetricsSpec")) with A
 
       // Cleanup all the metric recording instruments:
       if (resetState) {
+        // The Ping's processing time is recorded after the routee's receive returns, which can be after the Pong has
+        // arrived. Wait for it, or it could be recorded after the reset below.
+        eventually {
+          RouterProcessingTime.withTags(routerTags(s"RouterMetricsSpec/user/$routerName"))
+            .distribution(resetState = false).count should be >= 1L
+        }
+
         RouterRoutingTime.withTags(routerTags(s"RouterMetricsSpec/user/$routerName")).distribution(resetState = true)
         RouterTimeInMailbox.withTags(routerTags(s"RouterMetricsSpec/user/$routerName")).distribution(resetState = true)
         RouterProcessingTime.withTags(routerTags(s"RouterMetricsSpec/user/$routerName")).distribution(resetState = true)
@@ -330,6 +342,13 @@ class RouterMetricsSpec extends TestKit(ActorSystem("RouterMetricsSpec")) with A
 
       // Cleanup all the metric recording instruments:
       if (resetState) {
+        // The Ping's processing time is recorded after the routee's receive returns, which can be after the Pong has
+        // arrived. Wait for it, or it could be recorded after the reset below.
+        eventually {
+          RouterProcessingTime.withTags(routerTags(s"RouterMetricsSpec/user/$routerName"))
+            .distribution(resetState = false).count should be >= 1L
+        }
+
         RouterRoutingTime.withTags(routerTags(s"RouterMetricsSpec/user/$routerName")).distribution(resetState = true)
         RouterTimeInMailbox.withTags(routerTags(s"RouterMetricsSpec/user/$routerName")).distribution(resetState = true)
         RouterProcessingTime.withTags(routerTags(s"RouterMetricsSpec/user/$routerName")).distribution(resetState = true)
@@ -355,6 +374,12 @@ class RouterMetricsSpec extends TestKit(ActorSystem("RouterMetricsSpec")) with A
       if (resetState) {
         val tags = routerTags(s"RouterMetricsSpec/user/$routerName")
           .withTag("dispatcher", s"BalancingPool-/$routerName")
+
+        // The Ping's processing time is recorded after the routee's receive returns, which can be after the Pong has
+        // arrived. Wait for it, or it could be recorded after the reset below.
+        eventually {
+          RouterProcessingTime.withTags(tags).distribution(resetState = false).count should be >= 1L
+        }
 
         RouterRoutingTime.withTags(tags).distribution(resetState = true)
         RouterTimeInMailbox.withTags(tags).distribution(resetState = true)
