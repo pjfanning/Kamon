@@ -31,7 +31,7 @@ val instrumentationProjects = Seq[ProjectReference](
   `kamon-pekko-http`,
   `kamon-pekko-grpc`,
   `kamon-pekko-connectors-kafka`,
-  `kamon-play3`
+  `kamon-play`
 )
 
 lazy val instrumentation = (project in file("instrumentation"))
@@ -113,7 +113,7 @@ lazy val `kamon-pekko-connectors-kafka` = (project in file("instrumentation/kamo
   ).dependsOn(`kamon-pekko`)
   .settings(libraryDependencies ++= Seq(kamonCore, kamonTestkit % "test"))
 
-lazy val `kamon-play3` = (project in file("instrumentation/kamon-play3"))
+lazy val `kamon-play` = (project in file("instrumentation/kamon-play"))
   .enablePlugins(JavaAgent)
   .settings(
     instrumentationSettings,

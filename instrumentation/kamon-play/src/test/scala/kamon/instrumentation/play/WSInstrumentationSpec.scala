@@ -46,7 +46,7 @@ class WSInstrumentationSpec extends PlaySpecShim with GuiceOneServerPerSuite wit
     with InitAndStopKamonAfterAll with MetricInspection.Syntax with Reconfigure with OptionValues
     with TestSpanReporter {
 
-  System.setProperty("config.file", "./instrumentation/kamon-play3/src/test/resources/conf/application.conf")
+  System.setProperty("config.file", "./instrumentation/kamon-play/src/test/resources/conf/application.conf")
 
   override def fakeApplication(): Application = new GuiceApplicationBuilder()
     .appRoutes(testRoutes)
