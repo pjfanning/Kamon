@@ -12,8 +12,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.duration._
 
 class ServerFlowWrapperSpec extends AnyWordSpecLike with Matchers with ScalaFutures with InitAndStopKamonAfterAll {
+
+  // The default patience (150ms) is too short for the first stream to materialize on a busy CI machine
+  implicit override val patienceConfig: PatienceConfig = PatienceConfig(timeout = 5.seconds, interval = 50.millis)
 
   implicit private val system: ActorSystem = ActorSystem("http-client-instrumentation-spec")
   implicit private val executor: ExecutionContextExecutor = system.dispatcher
