@@ -18,7 +18,7 @@ jobs:
       - uses: coursier/cache-action@v8
       - uses: coursier/setup-action@v3
         with:
-          jvm: zulu:17
+          jvm: temurin:17
           apps: sbt
       - name: Release
         run: sbt ";+instrumentation/publishLocal; release"

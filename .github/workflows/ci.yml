@@ -26,7 +26,7 @@ jobs:
       - uses: coursier/cache-action@v8
       - uses: coursier/setup-action@v3
         with:
-          jvm: zulu:${{ matrix.java }}
+          jvm: temurin:${{ matrix.java }}
           apps: sbt
       - name: Test
         run: sbt -v "+instrumentation/test"
@@ -37,7 +37,7 @@ jobs:
       - uses: coursier/cache-action@v8
       - uses: coursier/setup-action@v3
         with:
-          jvm: zulu:17
+          jvm: temurin:17
           apps: sbt
       - name: Test
         run: sbt -v "+scalafmtCheckAll;scalafmtSbtCheck"
