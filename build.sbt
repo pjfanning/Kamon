@@ -579,7 +579,7 @@ lazy val `kamon-pekko-connectors-kafka` = (project in file("instrumentation/kamo
     crossScalaVersions := Seq(`scala_2.13_version`, scala_3_version),
     libraryDependencies ++= Seq(
       kanelaAgent % "provided",
-      "org.apache.pekko" %% "pekko-connectors-kafka" % "1.0.0" % "provided",
+      "org.apache.pekko" %% "pekko-connectors-kafka" % "2.0.0-M1" % "provided",
       "org.apache.pekko" %% "pekko-stream" % pekkoVersion % "provided",
       scalatest % "test",
       logbackClassic % "test"
