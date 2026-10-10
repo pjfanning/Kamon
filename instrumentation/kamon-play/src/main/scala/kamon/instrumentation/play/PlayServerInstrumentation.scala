@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2020 The Kamon Project <https://kamon.io>
+ * Copyright 2013-2025 The Kamon Project <https://kamon.io>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,8 @@ import io.netty.handler.codec.http.{HttpRequest, HttpResponse}
 import io.netty.util.concurrent.GenericFutureListener
 import kamon.{ClassLoading, Kamon}
 import kamon.context.Storage
-import kamon.instrumentation.akka.http.{ServerFlowWrapper => AkkaHttpServerFlowWrapper}
 import kamon.instrumentation.pekko.http.{ServerFlowWrapper => PekkoHttpServerFlowWrapper}
-import kamon.instrumentation.context.{CaptureCurrentTimestampOnExit, HasTimestamp}
+import kamon.instrumentation.context.HasTimestamp
 import kamon.instrumentation.http.HttpServerInstrumentation.RequestHandler
 import kamon.instrumentation.http.{HttpMessage, HttpServerInstrumentation}
 import kamon.util.CallingThreadExecutionContext
@@ -39,22 +38,12 @@ import play.api.mvc.RequestHeader
 import play.api.routing.Router
 import play.core.server.NettyServer
 
-import scala.collection.JavaConverters.asScalaBufferConverter
+import scala.annotation.static
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 import scala.util.{Failure, Success}
 
 class PlayServerInstrumentation extends InstrumentationBuilder {
-
-  /**
-    * When using the Akka HTTP server, we will use the exact same instrumentation that comes from the Akka HTTP module,
-    * the only difference here is that we will change the component name.
-    */
-  onType("play.core.server.AkkaHttpServer")
-    .when(classIsPresent("play.core.server.AkkaHttpServerProvider"))
-    .advise(
-      anyMethods("createServerBinding", "play$core$server$AkkaHttpServer$$createServerBinding"),
-      CreateAkkaHttpServerBindingAdvice
-    )
 
   /**
     * When using the Pekko HTTP server, we will use the exact same instrumentation that comes from the Pekko HTTP module,
@@ -64,7 +53,7 @@ class PlayServerInstrumentation extends InstrumentationBuilder {
     .when(classIsPresent("play.core.server.PekkoHttpServerProvider"))
     .advise(
       anyMethods("createServerBinding", "play$core$server$PekkoHttpServer$$createServerBinding"),
-      CreatePekkoHttpServerBindingAdvice
+      classOf[CreatePekkoHttpServerBindingAdvice]
     )
 
   /**
@@ -74,23 +63,22 @@ class PlayServerInstrumentation extends InstrumentationBuilder {
   onType("play.core.server.NettyServer")
     .when(classIsPresent("play.core.server.NettyServerProvider"))
     .mixin(classOf[HasServerInstrumentation.Mixin])
-    .advise(isConstructor, NettyServerInitializationAdvice)
+    .advise(isConstructor, classOf[NettyServerInitializationAdvice])
 
   if (hasGenericFutureListener()) {
     onType("play.core.server.netty.PlayRequestHandler")
       .when(classIsPresent("play.core.server.NettyServerProvider"))
       .mixin(classOf[HasServerInstrumentation.Mixin])
       .mixin(classOf[HasTimestamp.Mixin])
-      .advise(isConstructor, PlayRequestHandlerConstructorAdvice)
-      .advise(isConstructor, CaptureCurrentTimestampOnExit)
-      .advise(method("handle"), NettyPlayRequestHandlerHandleAdvice)
+      .advise(isConstructor, classOf[PlayRequestHandlerConstructorAdvice])
+      .advise(method("handle"), classOf[NettyPlayRequestHandlerHandleAdvice])
   }
 
   /**
     * This final bit ensures that we will apply an operation name right before filters get to execute.
     */
   onType("play.api.http.DefaultHttpRequestHandler")
-    .advise(method("filterHandler").and(takesArguments(2)), GenerateOperationNameOnFilterHandler)
+    .advise(method("filterHandler").and(takesArguments(2)), classOf[GenerateOperationNameOnFilterHandler])
 
   private def hasGenericFutureListener(): Boolean = {
     try { Class.forName("io.netty.util.concurrent.GenericFutureListener") != null }
@@ -99,34 +87,24 @@ class PlayServerInstrumentation extends InstrumentationBuilder {
 
 }
 
-object CreateAkkaHttpServerBindingAdvice {
-
-  @Advice.OnMethodEnter
-  def enter(): Unit =
-    AkkaHttpServerFlowWrapper.changeSettings("play.server.akka-http", "kamon.instrumentation.play.http.server")
-
-  @Advice.OnMethodExit
-  def exit(): Unit =
-    AkkaHttpServerFlowWrapper.resetSettings()
-
-}
-
+class CreatePekkoHttpServerBindingAdvice
 object CreatePekkoHttpServerBindingAdvice {
 
   @Advice.OnMethodEnter
-  def enter(): Unit =
+  @static def enter(): Unit =
     PekkoHttpServerFlowWrapper.changeSettings("play.server.pekko-http", "kamon.instrumentation.play.http.server")
 
   @Advice.OnMethodExit
-  def exit(): Unit =
+  @static def exit(): Unit =
     PekkoHttpServerFlowWrapper.resetSettings()
 
 }
 
+class NettyServerInitializationAdvice
 object NettyServerInitializationAdvice {
 
   @Advice.OnMethodExit
-  def exit(@Advice.This server: NettyServer): Unit = {
+  @static def exit(@Advice.This server: NettyServer): Unit = {
     val serverWithInstrumentation = server.asInstanceOf[HasServerInstrumentation]
     val config = Kamon.config().getConfig("kamon.instrumentation.play.http.server")
     val instrumentation = HttpServerInstrumentation.from(
@@ -140,10 +118,11 @@ object NettyServerInitializationAdvice {
   }
 }
 
+class NettyPlayRequestHandlerHandleAdvice
 object NettyPlayRequestHandlerHandleAdvice {
 
   @Advice.OnMethodEnter
-  def enter(
+  @static def enter(
     @Advice.This requestHandler: Any,
     @Advice.Argument(0) channel: Channel,
     @Advice.Argument(1) request: HttpRequest
@@ -173,7 +152,7 @@ object NettyPlayRequestHandlerHandleAdvice {
   }
 
   @Advice.OnMethodExit
-  def exit(
+  @static def exit(
     @Advice.Enter rpContext: RequestProcessingContext,
     @Advice.Return result: scala.concurrent.Future[HttpResponse]
   ): Unit = {
@@ -223,11 +202,13 @@ object NettyPlayRequestHandlerHandleAdvice {
     }
 }
 
+class PlayRequestHandlerConstructorAdvice
 object PlayRequestHandlerConstructorAdvice {
 
   @Advice.OnMethodExit
-  def exit(@Advice.This playRequestHandler: HasServerInstrumentation, @Advice.Argument(0) server: Any): Unit = {
+  @static def exit(@Advice.This playRequestHandler: HasServerInstrumentation, @Advice.Argument(0) server: Any): Unit = {
     val instrumentation = server.asInstanceOf[HasServerInstrumentation].serverInstrumentation()
+    playRequestHandler.asInstanceOf[HasTimestamp].setTimestamp(System.nanoTime())
     playRequestHandler.setServerInstrumentation(instrumentation)
     instrumentation.connectionOpened()
   }
@@ -244,15 +225,22 @@ trait HasServerInstrumentation {
 
 object HasServerInstrumentation {
 
-  class Mixin(var serverInstrumentation: HttpServerInstrumentation, var hasBeenUsedBefore: Boolean)
-      extends HasServerInstrumentation {
+  class Mixin extends HasServerInstrumentation {
+    private var _serverInstrumentation: HttpServerInstrumentation = null
+    private var _hasBeenUsedBefore: Boolean = false
     private var _handledRequests: AtomicLong = null
 
+    override def serverInstrumentation(): HttpServerInstrumentation =
+      this._serverInstrumentation
+
     override def setServerInstrumentation(serverInstrumentation: HttpServerInstrumentation): Unit =
-      this.serverInstrumentation = serverInstrumentation
+      this._serverInstrumentation = serverInstrumentation
+
+    override def hasBeenUsedBefore(): Boolean =
+      this._hasBeenUsedBefore
 
     override def markAsUsed(): Unit =
-      this.hasBeenUsedBefore = true
+      this._hasBeenUsedBefore = true
 
     override def requestHandled(): Unit =
       this._handledRequests.incrementAndGet()
@@ -267,6 +255,7 @@ object HasServerInstrumentation {
   }
 }
 
+class GenerateOperationNameOnFilterHandler
 object GenerateOperationNameOnFilterHandler {
 
   private val defaultRouterNameGenerator = new DefaultRouterOperationNameGenerator()
@@ -288,7 +277,7 @@ object GenerateOperationNameOnFilterHandler {
   }
 
   @Advice.OnMethodEnter
-  def enter(@Advice.Argument(0) request: RequestHeader): Unit = {
+  @static def enter(@Advice.Argument(0) request: RequestHeader): Unit = {
     request.attrs.get(Router.Attrs.HandlerDef).map(handler => {
       val span = Kamon.currentSpan()
       if (span.operationName() == "http.server.request") {

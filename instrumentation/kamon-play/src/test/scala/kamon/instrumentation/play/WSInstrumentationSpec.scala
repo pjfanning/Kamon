@@ -15,7 +15,6 @@
 
 package kamon.instrumentation.play
 
-
 import kamon.Kamon
 import kamon.context.Context
 import kamon.tag.Lookups.{plain, plainLong}
@@ -42,42 +41,49 @@ import play.api.test.Helpers._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 
+class WSInstrumentationSpec extends PlaySpecShim with GuiceOneServerPerSuite with ScalaFutures with Eventually
+    with SpanSugar
+    with InitAndStopKamonAfterAll with MetricInspection.Syntax with Reconfigure with OptionValues
+    with TestSpanReporter {
 
-class WSInstrumentationSpec extends PlaySpecShim with GuiceOneServerPerSuite with ScalaFutures with Eventually with SpanSugar
-  with InitAndStopKamonAfterAll with MetricInspection.Syntax with Reconfigure with OptionValues with TestSpanReporter {
-
-  System.setProperty("config.file", "./instrumentation/kamon-play/src/test-common/resources/conf/application.conf")
+  System.setProperty("config.file", "./instrumentation/kamon-play/src/test/resources/conf/application.conf")
 
   override def fakeApplication(): Application = new GuiceApplicationBuilder()
     .appRoutes(testRoutes)
-    .build
+    .build()
 
   def testRoutes(app: Application): PartialFunction[(String, String), Handler] = {
     val action = app.injector.instanceOf(classOf[DefaultActionBuilder])
 
     {
-      case ("GET", "/ok")                 => handler(action { Ok })
-      case ("GET", "/trace-id")           => handler(action { Ok(Kamon.currentSpan().trace.id.string) })
-      case ("GET", "/example-tag")        => handler(action { Ok(Kamon.currentContext().getTag(plain("example"))) })
-      case ("GET", "/error")              => handler(action { InternalServerError })
-      case ("GET", "/inside-controller")  => handler(insideController(s"http://localhost:$port/async")(app))
+      case ("GET", "/ok")                => handler(action { Ok })
+      case ("GET", "/trace-id")          => handler(action { Ok(Kamon.currentSpan().trace.id.string) })
+      case ("GET", "/example-tag")       => handler(action { Ok(Kamon.currentContext().getTag(plain("example"))) })
+      case ("GET", "/error")             => handler(action { InternalServerError })
+      case ("GET", "/inside-controller") => handler(insideController(s"http://localhost:$port/async")(app))
     }
   }
 
   // Adds the HandlerDef attribute to the request which simulates what would happen when a generated router handles
   // the request.
   def handler[T](action: Action[T]): Handler = {
-    Stage.modifyRequest(req => {
-      req.addAttr(Router.Attrs.HandlerDef, HandlerDef(
-        classLoader = getClass.getClassLoader,
-        routerPackage = "kamon",
-        controller = "kamon.TestController",
-        method = "testMethod",
-        parameterTypes = Seq.empty,
-        verb = req.method,
-        path = req.path
-      ))
-    }, action)
+    Stage.modifyRequest(
+      req => {
+        req.addAttr(
+          Router.Attrs.HandlerDef,
+          HandlerDef(
+            classLoader = getClass.getClassLoader,
+            routerPackage = "kamon",
+            controller = "kamon.TestController",
+            method = "testMethod",
+            parameterTypes = Seq.empty,
+            verb = req.method,
+            path = req.path
+          )
+        )
+      },
+      action
+    )
   }
 
   "the WS instrumentation" should {
@@ -113,7 +119,7 @@ class WSInstrumentationSpec extends PlaySpecShim with GuiceOneServerPerSuite wit
         span.metricTags.get(plain("http.method")) mustBe "GET"
         span.metricTags.get(plainLong("http.status_code")) mustBe 200L
 
-        response.body mustBe parentSpan.trace.id.string
+        response.body[String] mustBe parentSpan.trace.id.string
       }
     }
 
@@ -124,7 +130,7 @@ class WSInstrumentationSpec extends PlaySpecShim with GuiceOneServerPerSuite wit
 
       val response = Kamon.runWithContext(testContext)(await(wsClient.url(endpoint).get()))
       response.status mustBe 200
-      response.body mustBe "one"
+      response.body[String] mustBe "one"
     }
 
     "run the WSClient instrumentation only once, even if request filters are added" in {
@@ -151,7 +157,7 @@ class WSInstrumentationSpec extends PlaySpecShim with GuiceOneServerPerSuite wit
     }
   }
 
-  def insideController(url: String)(app:Application): Action[AnyContent] = {
+  def insideController(url: String)(app: Application): Action[AnyContent] = {
     val action = app.injector.instanceOf(classOf[DefaultActionBuilder])
     val wsClient = app.injector.instanceOf[WSClient]
 
@@ -169,5 +175,3 @@ class WSInstrumentationSpec extends PlaySpecShim with GuiceOneServerPerSuite wit
     }
   }
 }
-
-

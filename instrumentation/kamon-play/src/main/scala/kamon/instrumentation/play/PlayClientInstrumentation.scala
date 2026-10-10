@@ -25,6 +25,7 @@ import kanela.agent.api.instrumentation.InstrumentationBuilder
 import kanela.agent.libs.net.bytebuddy.implementation.bind.annotation.{RuntimeType, SuperCall}
 import play.api.libs.ws.{StandaloneWSRequest, StandaloneWSResponse, WSRequestExecutor, WSRequestFilter}
 
+import scala.annotation.static
 import scala.concurrent.Future
 
 class PlayClientInstrumentation extends InstrumentationBuilder {
@@ -37,13 +38,13 @@ class WSClientUrlInterceptor
 object WSClientUrlInterceptor {
 
   @RuntimeType
-  def url(@SuperCall zuper: Callable[StandaloneWSRequest]): StandaloneWSRequest = {
+  @static def url(@SuperCall zuper: Callable[StandaloneWSRequest]): StandaloneWSRequest = {
     zuper
       .call()
       .withRequestFilter(_clientInstrumentationFilter)
   }
 
-  @volatile private var _httpClientInstrumentation: HttpClientInstrumentation = rebuildHttpClientInstrumentation
+  @volatile private var _httpClientInstrumentation: HttpClientInstrumentation = rebuildHttpClientInstrumentation()
   Kamon.onReconfigure(_ => _httpClientInstrumentation = rebuildHttpClientInstrumentation())
 
   private def rebuildHttpClientInstrumentation(): HttpClientInstrumentation = {
@@ -52,7 +53,7 @@ object WSClientUrlInterceptor {
     _httpClientInstrumentation
   }
 
-  private val _clientInstrumentationFilter = WSRequestFilter { rf: WSRequestExecutor =>
+  private val _clientInstrumentationFilter = WSRequestFilter { (rf: WSRequestExecutor) =>
     new WSRequestExecutor {
       override def apply(request: StandaloneWSRequest): Future[StandaloneWSResponse] = {
         val currentContext = Kamon.currentContext()
@@ -89,7 +90,7 @@ object WSClientUrlInterceptor {
         request.header(header)
 
       override def readAll(): Map[String, String] =
-        request.headers.mapValues(_.head).toMap
+        request.headers.map { case (name, values) => name -> values.head }
 
       override def url: String =
         request.url

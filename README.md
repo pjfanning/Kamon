@@ -17,9 +17,9 @@ upstream artifact and package names.
 | `kamon-pekko-http` | Pekko HTTP server and client |
 | `kamon-pekko-grpc` | Pekko gRPC |
 | `kamon-pekko-connectors-kafka` | Pekko Connectors Kafka producers |
-| `kamon-play3` | Play Framework 3 (Pekko HTTP and Netty servers, Play WS client) |
+| `kamon-play` | Play Framework 3 (Pekko HTTP and Netty servers, Play WS client) |
 
-`kamon-play3` supports Play 3 only. For Play 2.8 and 2.9, use `io.kamon:kamon-play` from the main Kamon project.
+This fork's `kamon-play` supports Play 3 only (Pekko-based), which requires Java 11+. For Play 2.8 and 2.9 (Akka-based), use `io.kamon:kamon-play` from the main Kamon project.
 
 Kamon itself is not part of this fork. The modules depend on the `io.kamon` jars published on Maven Central:
 `kamon-core`, `kamon-instrumentation-common`, `kamon-scala-future`, `kamon-executors` and the `kanela-agent`.

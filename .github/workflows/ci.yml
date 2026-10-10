@@ -16,7 +16,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [ 8, 17 ]
+        java: [ 8, 11, 17 ]
+        include:
+          # Play 3 requires Java 11+, so kamon-play is excluded on Java 8
+          - java: 8
+            test-command: '"+kamon-pekko/test" "+kamon-pekko-http/test" "+kamon-pekko-grpc/test" "+kamon-pekko-connectors-kafka/test"'
     name: ci (java ${{ matrix.java }})
     steps:
       - uses: actions/checkout@v7
@@ -29,7 +33,7 @@ jobs:
           jvm: temurin:${{ matrix.java }}
           apps: sbt
       - name: Test
-        run: sbt -v "+instrumentation/test"
+        run: sbt -v ${{ matrix.test-command || '"+instrumentation/test"' }}
   lint:
     runs-on: ubuntu-latest
     steps:

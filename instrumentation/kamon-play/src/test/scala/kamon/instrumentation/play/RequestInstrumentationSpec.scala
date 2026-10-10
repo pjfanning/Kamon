@@ -27,7 +27,6 @@ import org.scalatest.OptionValues
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.play._
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
-import play.core.PlayVersion
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
@@ -41,36 +40,20 @@ import play.api.test._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class AkkaHTTPRequestHandlerInstrumentationSpec extends {
-      // https://www.playframaework.com/documentation/2.6.x/NettyServer#Verifying-that-the-Netty-server-is-running
-      // The Akka HTTP backend will not set a value for this request attribute.
-      val (confFile, expectedServer) = {
-        if (PlayVersion.current.startsWith("2")) {
-          (
-            "/instrumentation/kamon-play/src/test-common/resources/conf/application-akka-http.conf",
-            "play.server.akka-http"
-          )
-        } else {
-          (
-            "/instrumentation/kamon-play/src/test-common/resources/conf/application-pekko-http.conf",
-            "play.server.pekko-http"
-          )
-        }
-      }
+class PekkoHTTPRequestHandlerInstrumentationSpec extends RequestHandlerInstrumentationSpec(
+      "/instrumentation/kamon-play/src/test/resources/conf/application-pekko-http.conf",
+      "play.server.pekko-http"
+    )
 
-    } with RequestHandlerInstrumentationSpec
+class NettyRequestHandlerInstrumentationSpec extends RequestHandlerInstrumentationSpec(
+      "/instrumentation/kamon-play/src/test/resources/conf/application-netty.conf",
+      "play.server.netty"
+    )
 
-class NettyRequestHandlerInstrumentationSpec extends {
-      val confFile = "/instrumentation/kamon-play/src/test-common/resources/conf/application-netty.conf"
-      val expectedServer = "play.server.netty"
-    } with RequestHandlerInstrumentationSpec
-
-abstract class RequestHandlerInstrumentationSpec extends PlaySpecShim with GuiceOneServerPerSuite with ScalaFutures
+abstract class RequestHandlerInstrumentationSpec(val confFile: String, val expectedServer: String) extends PlaySpecShim
+    with GuiceOneServerPerSuite with ScalaFutures
     with Eventually with SpanSugar with InitAndStopKamonAfterAll with MetricInspection.Syntax with OptionValues
     with TestSpanReporter {
-
-  val confFile: String
-  val expectedServer: String
 
   System.setProperty("config.file", System.getProperty("user.dir") + confFile)
   implicit val executor: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
@@ -86,11 +69,11 @@ abstract class RequestHandlerInstrumentationSpec extends PlaySpecShim with Guice
       case ("GET", "/not-found") => handler(action { NotFound })
       case ("GET", "/server")    => handler(action { req => Ok(serverImplementationName(req)) })
       case ("GET", "/error")     => handler(action(_ => sys.error("This page generates an error!")))
-      case ("GET", "/rename-outside")    => {
+      case ("GET", "/rename-outside") => {
         Kamon.currentSpan().name("renamed-outside-action")
         handler(action { req => Ok(serverImplementationName(req)) })
       }
-      case ("GET", "/rename-inside")    => {
+      case ("GET", "/rename-inside") => {
         handler(action { req =>
           Kamon.currentSpan().name("renamed-inside-action")
           Ok(serverImplementationName(req))
@@ -138,7 +121,7 @@ abstract class RequestHandlerInstrumentationSpec extends PlaySpecShim with Guice
 
       val response = await(wsClient.url(endpoint).get())
       response.status mustBe 200
-      response.body mustBe expectedServer
+      response.body[String] mustBe expectedServer
     }
 
     "create server Spans for served operations" in {
@@ -193,12 +176,12 @@ abstract class RequestHandlerInstrumentationSpec extends PlaySpecShim with Guice
       {
         val response = await(wsClient.url(endpoint).addHttpHeaders("x-request-id" -> "123456").get())
         response.status mustBe 200
-        response.body mustBe "123456"
+        response.body[String] mustBe "123456"
       }
       {
         val response = await(wsClient.url(endpoint).addHttpHeaders("x-reQUest-Id" -> "654321").get())
         response.status mustBe 200
-        response.body mustBe "654321"
+        response.body[String] mustBe "654321"
       }
     }
 
