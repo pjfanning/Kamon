@@ -117,6 +117,8 @@ lazy val `kamon-play` = (project in file("instrumentation/kamon-play"))
   .enablePlugins(JavaAgent)
   .settings(
     instrumentationSettings,
+    // Play 3 requires Java 11+
+    javaReleaseVersion := "11",
     crossScalaVersions := Seq(`scala_2.13_version`, scala_3_version),
     libraryDependencies += kamonTestkit % "test"
   )

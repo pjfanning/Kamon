@@ -35,6 +35,8 @@ object BaseProject extends AutoPlugin {
     val pekkoHttpVersion = "1.0.0"
 
     val kanelaAgentVersion = settingKey[String]("Kanela Agent version")
+    val javaReleaseVersion =
+      settingKey[String]("Java version the compiled classes target (javac --release and scalac -release)")
     val kanelaAgentJar = taskKey[File]("Kanela Agent jar")
 
     val noPublishing = Seq(
@@ -131,18 +133,19 @@ object BaseProject extends AutoPlugin {
       autoImport.`scala_2.13_version`,
       autoImport.`scala_3_version`
     ),
-    javacOptions := Seq(
-      "-source",
-      "1.8",
-      "-target",
-      "1.8",
+    autoImport.javaReleaseVersion := "8",
+    javacOptions := {
+      // javac on JDK 8 doesn't support --release
+      if (scala.util.Properties.isJavaAtLeast("9")) Seq("--release", autoImport.javaReleaseVersion.value)
+      else Seq("-source", "1.8", "-target", "1.8")
+    } ++ Seq(
       "-Xlint:-options",
       "-encoding",
       "UTF-8",
       "-XDignore.symbol.file"
     ),
     scalacOptions := Seq(
-      "-release:8",
+      s"-release:${autoImport.javaReleaseVersion.value}",
       "-feature",
       "-unchecked",
       "-deprecation",
