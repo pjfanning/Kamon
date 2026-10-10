@@ -624,6 +624,7 @@ lazy val `kamon-play` = (project in file("instrumentation/kamon-play"))
     `kamon-testkit` % "test-common,test-play-28,test-play-29,test-play-30"
   )
 
+// Not included in the bundles because it shares class names with kamon-play
 lazy val `kamon-play3` = (project in file("instrumentation/kamon-play3"))
   .enablePlugins(JavaAgent)
   .disablePlugins(AssemblyPlugin)
@@ -1132,6 +1133,7 @@ lazy val `kamon-bundle-dependencies-2-13` = (project in file("bundle/kamon-bundl
     `kamon-pekko-connectors-kafka`,
     `kamon-tapir`,
     `kamon-alpakka-kafka`
+    // kamon-play3 is deliberately not bundled: it shares class names with kamon-play
   )
 
 /**
@@ -1172,6 +1174,7 @@ lazy val `kamon-bundle-dependencies-3` = (project in file("bundle/kamon-bundle-d
     `kamon-pekko-connectors-kafka`,
     `kamon-apache-httpclient`,
     `kamon-apache-cxf`
+    // kamon-play3 is deliberately not bundled: it shares class names with kamon-play
   )
 
 lazy val `kamon-bundle` = (project in file("bundle/kamon-bundle"))
