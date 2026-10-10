@@ -22,7 +22,6 @@ lazy val kamonScalaFuture = "io.kamon" %% "kamon-scala-future" % kamonVersion
 lazy val kamonTestkit = "io.kamon" %% "kamon-testkit" % kamonVersion
 
 lazy val kamon = (project in file("."))
-  .disablePlugins(AssemblyPlugin)
   .settings(noPublishing: _*)
   .settings(crossScalaVersions := Nil)
   .aggregate(instrumentation)
@@ -35,14 +34,12 @@ val instrumentationProjects = Seq[ProjectReference](
 )
 
 lazy val instrumentation = (project in file("instrumentation"))
-  .disablePlugins(AssemblyPlugin)
   .settings(noPublishing: _*)
   .settings(crossScalaVersions := Nil)
   .aggregate(instrumentationProjects: _*)
 
 lazy val `kamon-pekko` = (project in file("instrumentation/kamon-pekko"))
   .enablePlugins(JavaAgent)
-  .disablePlugins(AssemblyPlugin)
   .settings(instrumentationSettings: _*)
   .settings(Seq(
     crossScalaVersions := Seq(`scala_2.13_version`, scala_3_version),
@@ -61,7 +58,6 @@ lazy val pekkoHttpVersion = "1.0.0"
 
 lazy val `kamon-pekko-http` = (project in file("instrumentation/kamon-pekko-http"))
   .enablePlugins(JavaAgent)
-  .disablePlugins(AssemblyPlugin)
   .settings(instrumentationSettings)
   .settings(Seq(
     crossScalaVersions := Seq(`scala_2.13_version`, scala_3_version),
@@ -82,7 +78,6 @@ lazy val `kamon-pekko-http` = (project in file("instrumentation/kamon-pekko-http
 
 lazy val `kamon-pekko-grpc` = (project in file("instrumentation/kamon-pekko-grpc"))
   .enablePlugins(JavaAgent, PekkoGrpcPlugin)
-  .disablePlugins(AssemblyPlugin)
   .settings(instrumentationSettings)
   .settings(Seq(
     PB.additionalDependencies := Seq.empty,
@@ -103,7 +98,6 @@ lazy val `kamon-pekko-grpc` = (project in file("instrumentation/kamon-pekko-grpc
   .settings(libraryDependencies += kamonTestkit % "test")
 
 lazy val `kamon-pekko-connectors-kafka` = (project in file("instrumentation/kamon-pekko-connectors-kafka"))
-  .disablePlugins(AssemblyPlugin)
   .enablePlugins(JavaAgent)
   .settings(instrumentationSettings)
   .settings(

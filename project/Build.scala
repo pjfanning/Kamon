@@ -2,27 +2,17 @@ import sbt.{Configuration, _}
 import Keys._
 import sbt.librarymanagement.{Configuration, Configurations}
 import Configurations.Compile
-import sbtassembly.AssemblyPlugin
-import sbtassembly.AssemblyPlugin.autoImport.{
-  MergeStrategy,
-  assembleArtifact,
-  assembly,
-  assemblyExcludedJars,
-  assemblyMergeStrategy,
-  assemblyOption,
-  assemblyPackageScala
-}
 import java.util.Calendar
 
 import Def.Initialize
 import com.jsuereth.sbtpgp.PgpKeys.useGpgPinentry
 import sbtrelease.ReleasePlugin.autoImport._
-import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport._
+import sbtheader.HeaderPlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
 
 import scala.sys.process._
 import com.lightbend.sbt.javaagent.JavaAgent.JavaAgentKeys.javaAgents
-import de.heikoseeberger.sbtheader.{HeaderPlugin, License}
+import sbtheader.{HeaderPlugin, License}
 import sbt.plugins.JvmPlugin
 import sbtdynver.DynVerPlugin.autoImport.dynver
 import xerial.sbt.Sonatype.SonatypeKeys._
@@ -267,37 +257,4 @@ object BaseProject extends AutoPlugin {
       releaseStepCommandAndRemaining("sonatypeBundleRelease")
     )
   }
-}
-
-/**
-  * These settings are required by all projects we have using the sbt-assembly plugin. These settings allow publishing
-  * fat jars that do not reference their shaded dependencies in the pom.xml files without having to create separate code
-  * and publishing projects as described in the sbt-assembly readme [1].
-  *
-  * [1]: https://github.com/sbt/sbt-assembly#q-despite-the-concerned-friends-i-still-want-publish-fat-jars-what-advice-do-you-have
-  */
-object AssemblyTweaks extends AutoPlugin {
-  import BaseProject.autoImport.Shaded
-
-  override def requires = AssemblyPlugin
-  override def trigger = allRequirements
-  override def projectConfigurations: Seq[Configuration] = Seq(Shaded)
-  override def projectSettings: Seq[Def.Setting[_]] = Seq(
-    exportJars := true,
-    assembly / test := {},
-    Compile / packageBin := assembly.value,
-    assembly / fullClasspath := (Shaded / externalDependencyClasspath).value ++ (Compile / products).value.classpath,
-    assembly / assemblyOption := (assembly / assemblyOption).value.copy(
-      includeBin = true,
-      includeScala = false,
-      includeDependency = true,
-      cacheOutput = false
-    ),
-    assembly / assemblyMergeStrategy := {
-      case s if s.startsWith("LICENSE") => MergeStrategy.discard
-      case s if s.startsWith("about")   => MergeStrategy.discard
-      case "version.conf"               => MergeStrategy.concat
-      case x                            => (assembly / assemblyMergeStrategy).value(x)
-    }
-  ) ++ inConfig(Shaded)(Defaults.configSettings)
 }
