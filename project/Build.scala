@@ -31,8 +31,8 @@ object BaseProject extends AutoPlugin {
     val oshiCore = "com.github.oshi" % "oshi-core" % "6.4.13"
 
     // Pekko versions the Pekko instrumentation modules are built and tested against
-    val pekkoVersion = "1.0.1"
-    val pekkoHttpVersion = "1.0.0"
+    val pekkoVersion = "1.7.1"
+    val pekkoHttpVersion = "1.4.1"
 
     val kanelaAgentVersion = settingKey[String]("Kanela Agent version")
     val javaReleaseVersion =
