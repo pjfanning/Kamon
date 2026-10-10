@@ -15,7 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: git fetch -f --depth=1 origin '+refs/tags/*:refs/tags/*'
+        with:
+          # full history and tags, so sbt-dynver can compute the version (works even if there are no tags yet)
+          fetch-depth: 0
       - uses: coursier/cache-action@v6
       - uses: coursier/setup-action@v1
         with:
