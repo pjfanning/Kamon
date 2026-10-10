@@ -53,12 +53,17 @@ class ActorMetricsSpec extends TestKit(ActorSystem("ActorMetricsSpec")) with Any
       createTestActor("measuring-processing-time", true) ! TrackTimings(sleep = Some(100 millis))
 
       val timings = expectMsgType[TrackedTimings]
-      val processingTimeDistribution =
-        ActorProcessingTime.withTags(actorTags("ActorMetricsSpec/user/measuring-processing-time")).distribution()
 
-      processingTimeDistribution.count should be(1L)
-      processingTimeDistribution.buckets.size should be(1L)
-      processingTimeDistribution.buckets.head.value should be(timings.approximateProcessingTime +- 10.millis.toNanos)
+      // The processing time is recorded after receive returns, which can be after the reply has arrived
+      eventually {
+        val processingTimeDistribution = ActorProcessingTime
+          .withTags(actorTags("ActorMetricsSpec/user/measuring-processing-time"))
+          .distribution(resetState = false)
+
+        processingTimeDistribution.count should be(1L)
+        processingTimeDistribution.buckets.size should be(1L)
+        processingTimeDistribution.buckets.head.value should be(timings.approximateProcessingTime +- 10.millis.toNanos)
+      }
     }
 
     "record the number of errors" in new ActorMetricsFixtures {
@@ -91,12 +96,16 @@ class ActorMetricsSpec extends TestKit(ActorSystem("ActorMetricsSpec")) with Any
       trackedActor ! TrackTimings(sleep = Some(100 millis))
       val timings = expectMsgType[TrackedTimings]
 
-      val timeInMailboxDistribution = ActorTimeInMailbox
-        .withTags(actorTags("ActorMetricsSpec/user/measuring-time-in-mailbox")).distribution()
+      // The time-in-mailbox is recorded after receive returns, which can be after the reply has arrived
+      eventually {
+        val timeInMailboxDistribution = ActorTimeInMailbox
+          .withTags(actorTags("ActorMetricsSpec/user/measuring-time-in-mailbox"))
+          .distribution(resetState = false)
 
-      timeInMailboxDistribution.count should be(1L)
-      timeInMailboxDistribution.buckets.head.frequency should be(1L)
-      timeInMailboxDistribution.buckets.head.value should be(timings.approximateTimeInMailbox +- 10.millis.toNanos)
+        timeInMailboxDistribution.count should be(1L)
+        timeInMailboxDistribution.buckets.head.frequency should be(1L)
+        timeInMailboxDistribution.buckets.head.value should be(timings.approximateTimeInMailbox +- 10.millis.toNanos)
+      }
     }
 
     "clean up the associated recorder when the actor is stopped" in new ActorMetricsFixtures {
@@ -113,6 +122,8 @@ class ActorMetricsSpec extends TestKit(ActorSystem("ActorMetricsSpec")) with Any
       }
     }
   }
+
+  override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = 5 seconds, interval = 5 milliseconds)
 
   override protected def afterAll(): Unit = {
     shutdown()
@@ -142,6 +153,12 @@ class ActorMetricsSpec extends TestKit(ActorSystem("ActorMetricsSpec")) with Any
       // Cleanup all the metric recording instruments:
       if (resetState) {
         val tags = actorTags(s"ActorMetricsSpec/user/$name")
+
+        // The Ping's processing time and time-in-mailbox are recorded after the actor's receive returns, which can be
+        // after the Pong has arrived. Wait for them, or they could be recorded after the reset below.
+        eventually {
+          ActorTimeInMailbox.withTags(tags).distribution(resetState = false).count should be >= 1L
+        }
 
         ActorTimeInMailbox.withTags(tags).distribution(resetState = true)
         ActorProcessingTime.withTags(tags).distribution(resetState = true)
