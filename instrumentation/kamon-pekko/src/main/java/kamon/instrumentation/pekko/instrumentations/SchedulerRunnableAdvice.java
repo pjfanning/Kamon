@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *  http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
@@ -19,12 +19,30 @@ import kamon.Kamon;
 import kamon.context.Context;
 import kamon.context.Storage;
 import kanela.agent.libs.net.bytebuddy.asm.Advice;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SchedulerRunnableAdvice {
+  private static final Logger log = LoggerFactory.getLogger(SchedulerRunnableAdvice.class);
+
+  private static final Class<?> runOnClose() {
+    try {
+      return Class.forName("org.apache.pekko.actor.Scheduler$TaskRunOnClose");
+    } catch (ClassNotFoundException e) {
+      return null;
+    } catch (Throwable e) {
+      log.error("Unable to retain TaskRunOnClose marker trait on akka runnables", e);
+      return null;
+    }
+  }
+
+  public static final Class<?> taskRunOnClose = runOnClose();
 
   @Advice.OnMethodEnter(suppress = Throwable.class)
   public static void enter(@Advice.Argument(value = 1, readOnly = false) Runnable runnable) {
-    runnable = new ContextAwareRunnable(Kamon.currentContext(), runnable);
+    if (taskRunOnClose == null || !taskRunOnClose.isAssignableFrom(runnable.getClass())) {
+      runnable = new ContextAwareRunnable(Kamon.currentContext(), runnable);
+    }
   }
 
   public static class ContextAwareRunnable implements Runnable {
@@ -47,4 +65,5 @@ public class SchedulerRunnableAdvice {
       }
     }
   }
+
 }
