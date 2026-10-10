@@ -13,6 +13,11 @@ env:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ 8, 17 ]
+    name: ci (java ${{ matrix.java }})
     steps:
       - uses: actions/checkout@v7
         with:
@@ -21,7 +26,7 @@ jobs:
       - uses: coursier/cache-action@v8
       - uses: coursier/setup-action@v3
         with:
-          jvm: zulu:17
+          jvm: zulu:${{ matrix.java }}
           apps: sbt
       - name: Test
         run: sbt -v "+instrumentation/test"
