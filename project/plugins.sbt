@@ -14,11 +14,6 @@ addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.5.0")
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.2")
 
-addSbtPlugin("com.lightbend.akka.grpc" % "sbt-akka-grpc" % "2.1.3")
+// TEMPORARY (Pekko 2 experiment, do not merge): sbt-akka-grpc conflicts with pekko-grpc-sbt-plugin 2.x
+// addSbtPlugin("com.lightbend.akka.grpc" % "sbt-akka-grpc" % "2.1.3")
 addSbtPlugin("org.apache.pekko" % "pekko-grpc-sbt-plugin" % "2.0.0-M2")
-
-// pekko-grpc 2.x and akka-grpc 2.1.x plugins pull in conflicting versions of these
-libraryDependencySchemes ++= Seq(
-  "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
-  "com.thesamet.scalapb" %% "compilerplugin" % VersionScheme.Always
-)
