@@ -135,5 +135,5 @@ object AutoGroupingSpec {
     Props(new Reproducer(depth - 1, childCount))
 
   def dummy(): Props =
-    Props[Dummy]
+    Props[Dummy]()
 }

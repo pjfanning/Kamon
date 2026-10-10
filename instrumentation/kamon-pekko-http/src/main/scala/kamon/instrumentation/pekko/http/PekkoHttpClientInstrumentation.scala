@@ -40,7 +40,7 @@ class PekkoHttpClientInstrumentation extends InstrumentationBuilder {
 
 object PekkoHttpClientInstrumentation {
 
-  @volatile var httpClientInstrumentation: HttpClientInstrumentation = rebuildHttpClientInstrumentation
+  @volatile var httpClientInstrumentation: HttpClientInstrumentation = rebuildHttpClientInstrumentation()
 
   private[http] def rebuildHttpClientInstrumentation(): HttpClientInstrumentation = {
     val httpClientConfig = Kamon.config().getConfig("kamon.instrumentation.pekko.http.client")

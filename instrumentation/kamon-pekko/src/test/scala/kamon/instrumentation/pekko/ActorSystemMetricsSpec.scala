@@ -50,8 +50,8 @@ class ActorSystemMetricsSpec extends TestKit(ActorSystem("ActorSystemMetricsSpec
         activeActors.max shouldBe baseActorCount
       }
 
-      val actors = (1 to 10).map(id => watch(system.actorOf(Props[ActorMetricsTestActor], s"just-some-actor-$id")))
-      val parent = watch(system.actorOf(Props[SecondLevelGrouping], "just-some-parent-actor"))
+      val actors = (1 to 10).map(id => watch(system.actorOf(Props[ActorMetricsTestActor](), s"just-some-actor-$id")))
+      val parent = watch(system.actorOf(Props[SecondLevelGrouping](), "just-some-parent-actor"))
 
       1000 times {
         actors.foreach(_ ! Discard)
@@ -78,7 +78,7 @@ class ActorSystemMetricsSpec extends TestKit(ActorSystem("ActorSystemMetricsSpec
     }
 
     "record dead letters" in {
-      val doaActor = system.actorOf(Props[ActorMetricsTestActor], "doa")
+      val doaActor = system.actorOf(Props[ActorMetricsTestActor](), "doa")
       val deathWatcher = TestProbe()
       systemMetrics.deadLetters.value(true)
       deathWatcher.watch(doaActor)
@@ -93,7 +93,7 @@ class ActorSystemMetricsSpec extends TestKit(ActorSystem("ActorSystemMetricsSpec
     }
 
     "record unhandled messages" in {
-      val unhandled = system.actorOf(Props[ActorMetricsTestActor], "unhandled")
+      val unhandled = system.actorOf(Props[ActorMetricsTestActor](), "unhandled")
       10 times { unhandled ! "CantHandleStrings" }
 
       eventually {
@@ -106,8 +106,8 @@ class ActorSystemMetricsSpec extends TestKit(ActorSystem("ActorSystemMetricsSpec
       systemMetrics.processedMessagesByNonTracked.value(true)
       systemMetrics.processedMessagesByNonTracked.value(false) should be(0)
 
-      val tracked = system.actorOf(Props[ActorMetricsTestActor], "tracked-actor-counts")
-      val nonTracked = system.actorOf(Props[ActorMetricsTestActor], "non-tracked-actor-counts")
+      val tracked = system.actorOf(Props[ActorMetricsTestActor](), "tracked-actor-counts")
+      val nonTracked = system.actorOf(Props[ActorMetricsTestActor](), "non-tracked-actor-counts")
 
       (1 to 10).foreach(_ => tracked ! Discard)
       (1 to 15).foreach(_ => nonTracked ! Discard)

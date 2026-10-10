@@ -166,7 +166,7 @@ class SystemMessageInstrumentationSpec extends TestKit(ActorSystem("ActorSystemM
     class Child extends Actor {
       def receive: Receive = {
         case "fail"    => throw new ArithmeticException("Division by zero.")
-        case "context" => sender ! propagatedContextKey()
+        case "context" => sender() ! propagatedContextKey()
       }
 
       override def preRestart(reason: Throwable, message: Option[Any]): Unit = {

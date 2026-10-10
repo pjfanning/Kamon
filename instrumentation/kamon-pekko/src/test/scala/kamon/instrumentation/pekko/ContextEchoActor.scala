@@ -16,7 +16,7 @@ class ContextEchoActor(creationListener: Option[ActorRef]) extends Actor with Ac
       throw new ArithmeticException("Division by zero.")
 
     case "reply-trace-token" =>
-      sender ! currentTraceContextInfo
+      sender() ! currentTraceContextInfo
   }
 
   def currentTraceContextInfo: String = {

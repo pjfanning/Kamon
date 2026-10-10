@@ -17,9 +17,15 @@ import kamon.context.BinaryPropagation.ByteStreamWriter
 import kamon.instrumentation.pekko.PekkoRemoteMetrics
 import kanela.agent.libs.net.bytebuddy.implementation.bind.annotation.{Argument, RuntimeType}
 
+import scala.annotation.nowarn
+
 /**
   * Interceptor for org.apache.pekko.remote.transport.PekkoPduProtobufCodec$::constructMessage
+  *
+  * Deprecation warnings are suppressed because Ack and SeqNo are deprecated along with classic remoting, which is
+  * what this interceptor instruments.
   */
+@nowarn("cat=deprecation")
 class PekkoPduProtobufCodecConstructMessageMethodInterceptor {
 
   @RuntimeType

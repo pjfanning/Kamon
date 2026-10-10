@@ -28,7 +28,6 @@ import kanela.agent.libs.net.bytebuddy.asm.Advice.{Argument, OnMethodExit, Origi
 import org.slf4j.LoggerFactory
 
 import scala.annotation.static
-import scala.compat.Platform.EOL
 import scala.concurrent.Future
 
 class AskPatternInstrumentation extends InstrumentationBuilder {

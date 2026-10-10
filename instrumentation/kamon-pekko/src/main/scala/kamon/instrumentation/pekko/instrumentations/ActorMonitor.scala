@@ -280,7 +280,7 @@ object ActorMonitor {
     private def operationName(messageClass: String, sender: ActorRef): String = {
       val operationType = if (PekkoPrivateAccess.isPromiseActorRef(sender)) "ask" else "tell"
 
-      StringBuilder.newBuilder
+      new StringBuilder()
         .append(operationType)
         .append("(")
         .append(messageClass)

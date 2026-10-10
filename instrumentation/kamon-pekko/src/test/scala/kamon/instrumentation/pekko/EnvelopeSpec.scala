@@ -30,7 +30,7 @@ class EnvelopeSpec extends TestKit(ActorSystem("EnvelopeSpec")) with StopSystemA
 
   "EnvelopeInstrumentation" should {
     "mixin EnvelopeContext" in {
-      val actorRef = system.actorOf(Props[NoReply])
+      val actorRef = system.actorOf(Props[NoReply]())
       val env = Envelope("msg", actorRef, system).asInstanceOf[Object]
       env match {
         case e: Envelope with HasContext with HasTimestamp =>

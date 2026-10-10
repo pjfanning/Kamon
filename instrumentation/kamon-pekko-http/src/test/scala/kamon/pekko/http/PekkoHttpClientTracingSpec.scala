@@ -55,7 +55,7 @@ class PekkoHttpClientTracingSpec extends AnyWordSpecLike with Matchers with Init
       Http().singleRequest(HttpRequest(uri = target)).map(_.discardEntityBytes())
 
       eventually(timeout(10 seconds)) {
-        val span = testSpanReporter.nextSpan().value
+        val span = testSpanReporter().nextSpan().value
         span.operationName shouldBe "GET"
         span.tags.get(plain("http.url")) shouldBe target
         span.metricTags.get(plain("component")) shouldBe "pekko.http.client"
@@ -70,7 +70,7 @@ class PekkoHttpClientTracingSpec extends AnyWordSpecLike with Matchers with Init
       http.singleRequest(HttpRequest(uri = target))
 
       eventually(timeout(10 seconds)) {
-        val span = testSpanReporter.nextSpan().value
+        val span = testSpanReporter().nextSpan().value
         span.operationName shouldBe "GET"
         span.tags.get(plain("http.url")) shouldBe target
         span.metricTags.get(plain("component")) shouldBe "pekko.http.client"
@@ -89,7 +89,10 @@ class PekkoHttpClientTracingSpec extends AnyWordSpecLike with Matchers with Init
 
       eventually(timeout(10 seconds)) {
         val httpResponse = response.value.value.get
-        val headersMap = parse(httpResponse.data.utf8String).extract[Map[String, String]]
+        val headersMap = parse(httpResponse.data.utf8String) match {
+          case JObject(fields) => fields.collect { case (name, JString(value)) => name -> value }.toMap
+          case other           => fail(s"Expected a JSON object with the request headers, got $other")
+        }
 
         headersMap.keys.toList should contain allOf (
           "context-tags",

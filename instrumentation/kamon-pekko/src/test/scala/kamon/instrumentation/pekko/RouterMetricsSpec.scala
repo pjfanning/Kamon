@@ -203,7 +203,7 @@ class RouterMetricsSpec extends TestKit(ActorSystem("RouterMetricsSpec")) with S
     "pick the right dispatcher name when the routees have a custom dispatcher set via deployment configuration" in new RouterMetricsFixtures {
       val testProbe = TestProbe()
       val router =
-        system.actorOf(FromConfig.props(Props[RouterMetricsTestActor]), "picking-the-right-dispatcher-in-pool-router")
+        system.actorOf(FromConfig.props(Props[RouterMetricsTestActor]()), "picking-the-right-dispatcher-in-pool-router")
 
       10 times {
         router.tell(Ping, testProbe.ref)
@@ -304,7 +304,7 @@ class RouterMetricsSpec extends TestKit(ActorSystem("RouterMetricsSpec")) with S
   trait RouterMetricsFixtures {
     def createTestGroupRouter(routerName: String, resetState: Boolean = false): ActorRef = {
       val routees = Vector.fill(5) {
-        system.actorOf(Props[RouterMetricsTestActor])
+        system.actorOf(Props[RouterMetricsTestActor]())
       }
 
       val group = system.actorOf(RoundRobinGroup(routees.map(_.path.toStringWithoutAddress)).props(), routerName)
@@ -333,7 +333,7 @@ class RouterMetricsSpec extends TestKit(ActorSystem("RouterMetricsSpec")) with S
     }
 
     def createTestPoolRouter(routerName: String, resetState: Boolean = false): ActorRef = {
-      val router = system.actorOf(RoundRobinPool(5).props(Props[RouterMetricsTestActor]), routerName)
+      val router = system.actorOf(RoundRobinPool(5).props(Props[RouterMetricsTestActor]()), routerName)
       val initialiseListener = TestProbe()
 
       // Ensure that the router has been created before returning.
@@ -363,7 +363,7 @@ class RouterMetricsSpec extends TestKit(ActorSystem("RouterMetricsSpec")) with S
     }
 
     def createTestBalancingPoolRouter(routerName: String, resetState: Boolean = false): ActorRef = {
-      val router = system.actorOf(BalancingPool(5).props(Props[RouterMetricsTestActor]), routerName)
+      val router = system.actorOf(BalancingPool(5).props(Props[RouterMetricsTestActor]()), routerName)
       val initialiseListener = TestProbe()
 
       // Ensure that the router has been created before returning.
