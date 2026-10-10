@@ -136,6 +136,7 @@ val instrumentationProjects = Seq[ProjectReference](
   `kamon-pekko-http`,
   `kamon-pekko-grpc`,
   `kamon-play`,
+  `kamon-play3`,
   `kamon-okhttp`,
   `kamon-tapir`,
   `kamon-redis`,
@@ -621,6 +622,19 @@ lazy val `kamon-play` = (project in file("instrumentation/kamon-play"))
     `kamon-pekko` % "compile,test-common,test-play-30",
     `kamon-pekko-http` % "compile,test-common,test-play-30",
     `kamon-testkit` % "test-common,test-play-28,test-play-29,test-play-30"
+  )
+
+lazy val `kamon-play3` = (project in file("instrumentation/kamon-play3"))
+  .enablePlugins(JavaAgent)
+  .disablePlugins(AssemblyPlugin)
+  .settings(
+    instrumentationSettings,
+    crossScalaVersions := Seq(`scala_2.13_version`, scala_3_version)
+  )
+  .dependsOn(
+    `kamon-pekko`,
+    `kamon-pekko-http`,
+    `kamon-testkit` % "test"
   )
 
 lazy val `kamon-okhttp` = (project in file("instrumentation/kamon-okhttp"))
