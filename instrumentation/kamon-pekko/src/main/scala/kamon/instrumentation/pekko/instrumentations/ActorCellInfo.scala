@@ -35,7 +35,6 @@ object ActorCellInfo {
     val actorName = ref.path.name
 
     val pathString = ref.path.elements.mkString("/")
-    val isRootSupervisor = pathString.length == 0 || pathString == "user" || pathString == "system"
     val isRouter = hasRouterProps(props)
     val isRoutee = PekkoPrivateAccess.isRoutedActorRef(parent)
     val isTemporary = PekkoPrivateAccess.isUnstartedActorCell(cell)
@@ -47,6 +46,12 @@ object ActorCellInfo {
         (parent.asInstanceOf[HasRouterProps].routerProps.routerConfig.getClass, Some(props.actorClass()))
       else
         (props.actorClass(), None)
+
+    // In a typed ActorSystem the user guardian (/user) runs the behavior passed to ActorSystem(...), so it's tracked
+    // like any other actor rather than being treated as a root supervisor.
+    val isTypedUserGuardian = pathString == "user" && !isRouter && !isRoutee && isTyped(actorOrRouterClass)
+    val isRootSupervisor =
+      pathString.isEmpty || pathString == "system" || (pathString == "user" && !isTypedUserGuardian)
 
     val fullPath = if (isRoutee) cellName(system, parent) else cellName(system, ref)
     val dispatcherName = if (isRouter) {

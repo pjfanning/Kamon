@@ -9,6 +9,7 @@ libraryDependencies ++= Seq(
   scalatest % Test,
   logbackClassic % Test,
   "org.apache.pekko" %% "pekko-actor" % pekkoVersion % "provided,test",
+  "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion % "provided,test",
   "org.apache.pekko" %% "pekko-testkit" % pekkoVersion % "provided,test",
   "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion % "provided,test",
   "org.apache.pekko" %% "pekko-remote" % pekkoVersion % "provided,test",
