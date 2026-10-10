@@ -25,6 +25,12 @@ class ShardingMessageBufferingSpec extends TestKitBase with AnyWordSpecLike with
         |pekko {
         |  loglevel = INFO
         |  loggers = [ "org.apache.pekko.event.slf4j.Slf4jLogger" ]
+        |  # leave out pekko-actor-typed's LoadTypedExtensions (see the test application.conf): its Receptionist needs
+        |  # pekko-cluster-typed on cluster-provider systems
+        |  library-extensions = [
+        |    "org.apache.pekko.serialization.SerializationExtension$",
+        |    "org.apache.pekko.stream.SystemMaterializer$"
+        |  ]
         |
         |  actor {
         |    provider = "cluster"
@@ -49,6 +55,12 @@ class ShardingMessageBufferingSpec extends TestKitBase with AnyWordSpecLike with
       |pekko {
       |  loglevel = INFO
       |  loggers = [ "org.apache.pekko.event.slf4j.Slf4jLogger" ]
+      |  # leave out pekko-actor-typed's LoadTypedExtensions (see the test application.conf): its Receptionist needs
+      |  # pekko-cluster-typed on cluster-provider systems
+      |  library-extensions = [
+      |    "org.apache.pekko.serialization.SerializationExtension$",
+      |    "org.apache.pekko.stream.SystemMaterializer$"
+      |  ]
       |
       |  actor {
       |    provider = "cluster"

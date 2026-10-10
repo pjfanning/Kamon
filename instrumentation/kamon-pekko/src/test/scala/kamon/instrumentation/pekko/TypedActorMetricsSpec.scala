@@ -18,6 +18,7 @@ package kamon.instrumentation.pekko
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.scaladsl.AskPattern.Askable
 import org.apache.pekko.util.Timeout
+import com.typesafe.config.{Config, ConfigFactory}
 import kamon.instrumentation.pekko.PekkoMetrics._
 import kamon.instrumentation.pekko.TypedActor._
 import kamon.testkit.{InitAndStopKamonAfterAll, InstrumentInspection, MetricInspection}
@@ -27,12 +28,25 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 
 class TypedActorMetricsSpec extends AnyWordSpec
     with MetricInspection.Syntax with InstrumentInspection.Syntax with Matchers
     with Eventually with InitAndStopKamonAfterAll {
 
-  private val system: ActorSystem[Greet] = ActorSystem(TypedActor.guardian(), "greet-service")
+  // The shared test application.conf undoes pekko-actor-typed's reference.conf settings so they don't affect the
+  // classic specs, so this ActorSystem turns them back on
+  private val typedConfig: Config = {
+    val config = ConfigFactory.load()
+    val libraryExtensions = config.getStringList("pekko.library-extensions").asScala :+
+      "org.apache.pekko.actor.typed.internal.adapter.ActorSystemAdapter$LoadTypedExtensions"
+    ConfigFactory.parseMap(Map[String, AnyRef](
+      "pekko.library-extensions" -> libraryExtensions.asJava,
+      "pekko.use-slf4j" -> java.lang.Boolean.TRUE
+    ).asJava).withFallback(config)
+  }
+
+  private val system: ActorSystem[Greet] = ActorSystem(TypedActor.guardian(), "greet-service", typedConfig)
 
   "the Kamon typed actor metrics" should {
     "track the user guardian of a typed ActorSystem, but not the root guardian" in {
