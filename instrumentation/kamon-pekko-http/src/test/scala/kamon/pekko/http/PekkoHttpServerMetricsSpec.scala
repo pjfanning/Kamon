@@ -29,7 +29,7 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.{Await, ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
 
 class PekkoHttpServerMetricsSpec extends AnyWordSpecLike with Matchers with InitAndStopKamonAfterAll
@@ -51,7 +51,7 @@ class PekkoHttpServerMetricsSpec extends AnyWordSpecLike with Matchers with Init
     "track the number of open connections and active requests on the Server side" in {
       val httpServerMetrics = HttpServerMetrics.of("pekko.http.server", interface, port)
 
-      for (_ <- 1 to 8) yield {
+      val responses = for (_ <- 1 to 8) yield {
         sendRequest(HttpRequest(uri = s"http://$interface:$port/$waitTen"))
       }
 
@@ -59,6 +59,9 @@ class PekkoHttpServerMetricsSpec extends AnyWordSpecLike with Matchers with Init
         httpServerMetrics.openConnections.distribution().max shouldBe (8)
         httpServerMetrics.activeRequests.distribution().max shouldBe (8)
       }
+
+      // Surfaces failed requests (e.g. connection errors) instead of only seeing the metrics stay at zero
+      Await.result(Future.sequence(responses), 20 seconds).map(_.status.intValue()) shouldBe Seq.fill(8)(200)
 
       eventually(timeout(20 seconds)) {
         httpServerMetrics.openConnections.distribution().max shouldBe (0)
@@ -68,7 +71,8 @@ class PekkoHttpServerMetricsSpec extends AnyWordSpecLike with Matchers with Init
   }
 
   def sendRequest(request: HttpRequest): Future[HttpResponse] = {
-    val connectionSettings = ClientConnectionSettings(system).withIdleTimeout(1 second)
+    // Must be longer than the 5 second delay of the waitTen endpoint, or the client drops the connection first
+    val connectionSettings = ClientConnectionSettings(system).withIdleTimeout(10 seconds)
     Source.single(request)
       .via(Http().outgoingConnection(interface, port, settings = connectionSettings))
       .map { r =>

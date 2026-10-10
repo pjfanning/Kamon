@@ -37,7 +37,10 @@ import org.json4s.{DefaultFormats, native, Serialization}
 import kamon.tag.Lookups.plain
 import kamon.trace.Trace
 
-import scala.concurrent.{ExecutionContext, Future}
+import org.apache.pekko.pattern.after
+
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 
 trait TestWebServer extends TracingDirectives {
   implicit val serialization: Serialization = native.Serialization
@@ -145,10 +148,8 @@ trait TestWebServer extends TracingDirectives {
         } ~
         path(waitTen) {
           respondWithHeader(Connection("close")) {
-            complete {
-              Thread.sleep(5000)
-              OK
-            }
+            // Delay without blocking a dispatcher thread, which is shared with the clients in the same ActorSystem
+            complete(after(5.seconds)(Future.successful(OK)))
           }
         } ~
         path(stream) {
@@ -179,15 +180,15 @@ trait TestWebServer extends TracingDirectives {
       }
     }
 
-    if (https)
-      new WebServer(
-        interface,
-        port,
-        "https",
-        Http().newServerAt(interface, port).enableHttps(httpContext()).bind(Route.toFunction(routes))
-      )
-    else
-      new WebServer(interface, port, "http", Http().newServerAt(interface, port).bindFlow(routes))
+    val (protocol, bindingFuture) =
+      if (https)
+        ("https", Http().newServerAt(interface, port).enableHttps(httpContext()).bind(Route.toFunction(routes)))
+      else
+        ("http", Http().newServerAt(interface, port).bindFlow(routes))
+
+    // Wait for the server to be bound so that tests don't send requests before it is listening
+    Await.result(bindingFuture, 10.seconds)
+    new WebServer(interface, port, protocol, bindingFuture)
   }
 
   def httpContext(): HttpsConnectionContext = {
