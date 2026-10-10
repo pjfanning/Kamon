@@ -14,12 +14,12 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # full history and tags, so sbt-dynver can compute the version (works even if there are no tags yet)
           fetch-depth: 0
-      - uses: coursier/cache-action@v6
-      - uses: coursier/setup-action@v1
+      - uses: coursier/cache-action@v8
+      - uses: coursier/setup-action@v3
         with:
           jvm: zulu:17
           apps: sbt
@@ -28,9 +28,9 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: coursier/cache-action@v6
-      - uses: coursier/setup-action@v1
+      - uses: actions/checkout@v7
+      - uses: coursier/cache-action@v8
+      - uses: coursier/setup-action@v3
         with:
           jvm: zulu:17
           apps: sbt

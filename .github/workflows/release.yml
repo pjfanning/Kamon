@@ -11,12 +11,12 @@ jobs:
       JAVA_OPTS: -Xms5120M -Xmx5120M -Xss6M -XX:ReservedCodeCacheSize=256M -Dfile.encoding=UTF-8
       JVM_OPTS: -Xms5120M -Xmx5120M -Xss6M -XX:ReservedCodeCacheSize=256M -Dfile.encoding=UTF-8
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # full history and tags, so sbt-dynver can compute the version (works even if there are no tags yet)
           fetch-depth: 0
-      - uses: coursier/cache-action@v6
-      - uses: coursier/setup-action@v1
+      - uses: coursier/cache-action@v8
+      - uses: coursier/setup-action@v3
         with:
           jvm: zulu:17
           apps: sbt
