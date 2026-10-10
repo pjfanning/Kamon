@@ -1,11 +1,43 @@
-# Kamon Telemetry<img align="right" src="https://raw.githubusercontent.com/kamon-io/kamon.io/279f4d3a658437a5182e10d75aa3d55b811b2836/assets/img/kamon/kamon-icon-light.svg" height="150px" style="padding-left: 20px"/>
-[![Discord](https://img.shields.io/discord/866301994074243132?label=Join%20the%20Comunity%20on%20Discord)](https://discord.gg/5JuYsDJ7au)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.kamon/kamon-core_2.13/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.kamon/kamon-core_2.13)
+# Kamon Pekko instrumentation (fork)
 
-Kamon Telemetry is a set of libraries for instrumenting applications running on the JVM. With Kamon Telemetry you can 
-collect metrics, propagate context across threads and services, and get distributed traces automatically. The best way 
-to get started is following our [installation guides](https://kamon.io/get-started/) and taking it from there. Have fun 
-with Kamon!
+This is a fork of [Kamon](https://github.com/kamon-io/Kamon) that only builds and publishes Kamon's
+[Apache Pekko](https://pekko.apache.org/) and Play 3 instrumentation modules, with changes on top of the upstream code.
+
+For everything else about Kamon, including documentation, the other instrumentation modules and support, go to the main
+[Kamon repository](https://github.com/kamon-io/Kamon) and [kamon.io](https://kamon.io/).
+
+## Modules
+
+These modules are published under the `com.github.pjfanning` group ID, for Scala 2.13 and Scala 3. They keep the
+upstream artifact and package names.
+
+| Module | Instruments |
+|---|---|
+| `kamon-pekko` | Pekko actors, routers, dispatchers, remoting and cluster sharding |
+| `kamon-pekko-http` | Pekko HTTP server and client |
+| `kamon-pekko-grpc` | Pekko gRPC |
+| `kamon-pekko-connectors-kafka` | Pekko Connectors Kafka producers |
+| `kamon-play3` | Play Framework 3 (Pekko HTTP and Netty servers, Play WS client) |
+
+`kamon-play3` supports Play 3 only. For Play 2.8 and 2.9, use `io.kamon:kamon-play` from the main Kamon project.
+
+Kamon itself is not part of this fork. The modules depend on the `io.kamon` jars published on Maven Central:
+`kamon-core`, `kamon-instrumentation-common`, `kamon-scala-future`, `kamon-executors` and the `kanela-agent`.
+
+## Usage
+
+Add the modules you need alongside `kamon-core` (or the individual Kamon modules you use), for example with sbt:
+
+```scala
+libraryDependencies ++= Seq(
+  "io.kamon" %% "kamon-core" % "2.8.1",
+  "com.github.pjfanning" %% "kamon-pekko" % "<version>",
+  "com.github.pjfanning" %% "kamon-pekko-http" % "<version>"
+)
+```
+
+These modules use the same package and class names as Kamon's own Pekko and Play modules, so don't put both on the
+classpath. In particular, don't combine them with `kamon-bundle`, which already includes Kamon's versions.
 
 ## License
 
