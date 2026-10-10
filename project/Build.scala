@@ -125,11 +125,12 @@ object BaseProject extends AutoPlugin {
     Test / parallelExecution := false,
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-F", "2.5"),
     startYear := Some(2013),
-    organization := "io.kamon",
+    organization := "com.github.pjfanning",
     organizationName := "The Kamon Project",
     headerLicense := licenseTemplate(startYear.value),
     autoImport.kanelaAgentJar := findKanelaAgentJar.value,
-    organizationHomepage := Some(url("https://kamon.io/")),
+    organizationHomepage := Some(url("https://github.com/pjfanning/Kamon")),
+    homepage := Some(url("https://github.com/pjfanning/Kamon")),
     Global / concurrentRestrictions += Tags.limit(Tags.Test, 1),
     licenses += (("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0"))),
     resolvers += Resolver.mavenLocal,
@@ -236,15 +237,15 @@ object BaseProject extends AutoPlugin {
   }
 
   private def defaultPomExtra() = {
-    <url>http://kamon.io</url>
-      <scm>
-        <url>git://github.com/kamon-io/Kamon.git</url>
-        <connection>scm:git:git@github.com:kamon-io/Kamon.git</connection>
-      </scm>
-      <developers>
+    <scm>
+      <url>https://github.com/pjfanning/Kamon</url>
+      <connection>scm:git:git@github.com:pjfanning/Kamon.git</connection>
+    </scm>
+    <developers>
+        <developer><id>pjfanning</id><name>PJ Fanning</name><url>https://github.com/pjfanning</url></developer>
         <developer><id>ivantopo</id><name>Ivan Topolnjak</name><url>https://twitter.com/ivantopo</url></developer>
         <developer><id>dpsoft</id><name>Diego Parra</name><url>https://twitter.com/diegolparra</url></developer>
-      </developers>
+    </developers>
   }
 
   private def setupGpg(): Unit = {
