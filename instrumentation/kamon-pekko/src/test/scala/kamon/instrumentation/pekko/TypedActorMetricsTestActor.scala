@@ -63,16 +63,21 @@ object TypedActorMetricsTestActor {
 }
 
 /**
-  * A typed actor that spawns a number of TypedActorMetricsTestActor children ("member-1" to "member-N") and forwards
-  * messages to all of them. Stopping it stops all its members.
+  * A typed actor that spawns a number of TypedActorMetricsTestActor children ("member-1" to "member-N"), optionally
+  * wrapped by the given function (e.g. to supervise them), and forwards messages to all of them. Stopping it stops all
+  * its members.
   */
 object TypedActorMetricsTestParent {
   sealed trait Command
   final case class ToAllMembers(message: TypedActorMetricsTestActor.Command) extends Command
   case object Stop extends Command
 
-  def apply(memberCount: Int): Behavior[Command] = Behaviors.setup { context =>
-    val members = (1 to memberCount).map(id => context.spawn(TypedActorMetricsTestActor(), s"member-$id"))
+  def apply(
+    memberCount: Int,
+    wrapMember: Behavior[TypedActorMetricsTestActor.Command] => Behavior[TypedActorMetricsTestActor.Command] =
+      identity
+  ): Behavior[Command] = Behaviors.setup { context =>
+    val members = (1 to memberCount).map(id => context.spawn(wrapMember(TypedActorMetricsTestActor()), s"member-$id"))
 
     Behaviors.receiveMessage {
       case ToAllMembers(message) =>
