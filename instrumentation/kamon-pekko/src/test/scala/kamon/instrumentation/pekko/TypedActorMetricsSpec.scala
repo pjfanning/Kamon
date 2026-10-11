@@ -196,6 +196,8 @@ class TypedActorMetricsSpec extends AnyWordSpec
 
   "the Kamon actor system metrics for a typed ActorSystem" should {
     "record active actor counts for spawned and stopped typed actors" in {
+      // TestProbes are actors too (and aren't stopped), so the same one is used throughout, created before the baseline
+      val probe = TestProbe()(system.classicSystem)
       val baseActorCount = eventually {
         val activeActors = systemMetrics.activeActors.distribution()
         activeActors.count should be > 0L
@@ -205,7 +207,7 @@ class TypedActorMetricsSpec extends AnyWordSpec
 
       // A parent and its three members
       val parent = spawn(TypedActorMetricsTestParent(3), "typed-active-actors")
-      pingAllMembers(parent, 3)
+      pingAllMembers(parent, 3, probe)
 
       eventually {
         val activeActors = systemMetrics.activeActors.distribution()
@@ -214,7 +216,7 @@ class TypedActorMetricsSpec extends AnyWordSpec
         activeActors.max shouldBe (baseActorCount + 4)
       }
 
-      stopAndAwaitTermination(parent, TypedActorMetricsTestParent.Stop)
+      stopAndAwaitTermination(parent, TypedActorMetricsTestParent.Stop, probe)
 
       eventually {
         val activeActors = systemMetrics.activeActors.distribution()
@@ -418,14 +420,20 @@ class TypedActorMetricsSpec extends AnyWordSpec
     actor
   }
 
-  private def pingAllMembers(parent: ActorRef[TypedActorMetricsTestParent.Command], memberCount: Int): Unit = {
-    val probe = TestProbe()(system.classicSystem)
+  private def pingAllMembers(
+    parent: ActorRef[TypedActorMetricsTestParent.Command],
+    memberCount: Int,
+    probe: TestProbe = TestProbe()(system.classicSystem)
+  ): Unit = {
     parent ! ToAllMembers(Ping(probe.ref.toTyped[Pong.type]))
     probe.receiveN(memberCount, 10.seconds)
   }
 
-  private def stopAndAwaitTermination[T](actor: ActorRef[T], stopMessage: T): Unit = {
-    val probe = TestProbe()(system.classicSystem)
+  private def stopAndAwaitTermination[T](
+    actor: ActorRef[T],
+    stopMessage: T,
+    probe: TestProbe = TestProbe()(system.classicSystem)
+  ): Unit = {
     probe.watch(actor.toClassic)
     actor ! stopMessage
     probe.expectTerminated(actor.toClassic, 10.seconds)
