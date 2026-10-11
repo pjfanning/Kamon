@@ -25,6 +25,8 @@ import kanela.agent.libs.net.bytebuddy.asm.Advice
 import kanela.agent.libs.net.bytebuddy.asm.Advice.{Argument, OnMethodEnter, OnMethodExit, This}
 import org.apache.pekko.actor.instrumentation.ReplaceWithAdvice
 import org.apache.pekko.actor.{ActorRef, ActorSystem}
+import org.apache.pekko.actor.typed.TypedActorContext
+import org.apache.pekko.actor.typed.scaladsl.adapter._
 
 import scala.annotation.static
 
@@ -55,6 +57,14 @@ class ActorInstrumentation extends InstrumentationBuilder {
     .advise(isConstructor, classOf[RepointableActorCellConstructorAdvice])
     .advise(method("sendMessage").and(takesArguments(1)), classOf[SendMessageAdvice])
     .advise(method("replaceWith"), classOf[ReplaceWithAdvice])
+
+  /**
+   * Typed supervisors (Behaviors.supervise) catch failures inside the behavior when they resume or restart the actor,
+   * so those failures never reach handleInvokeFailure. Every failure a typed supervisor handles is passed to
+   * AbstractSupervisor.log (even when the strategy's logging is disabled), so that's where they are counted.
+   */
+  onType("org.apache.pekko.actor.typed.internal.AbstractSupervisor")
+    .advise(method("log").and(takesArguments(3)), classOf[TypedSupervisorLogAdvice])
 
 }
 
@@ -162,8 +172,24 @@ class HandleInvokeFailureMethodAdvice
 object HandleInvokeFailureMethodAdvice {
 
   @OnMethodEnter(suppress = classOf[Throwable])
-  @static def onEnter(@This cell: Any, @Argument(1) failure: Throwable): Unit =
-    actorMonitor(cell).onFailure(failure)
+  @static def onEnter(@This cell: Any, @Argument(1) failure: Throwable): Unit = {
+    // A typed actor rethrows a failure its supervisor stopped it for (or gave up restarting it for) wrapped in a
+    // TypedActorFailedException. The supervisor already logged it, so TypedSupervisorLogAdvice has counted it.
+    if (
+      failure.getClass.getName != "org.apache.pekko.actor.typed.internal.adapter.ActorAdapter$TypedActorFailedException"
+    )
+      actorMonitor(cell).onFailure(failure)
+  }
+
+}
+
+class TypedSupervisorLogAdvice
+
+object TypedSupervisorLogAdvice {
+
+  @OnMethodEnter(suppress = classOf[Throwable])
+  @static def onEnter(@Argument(0) context: TypedActorContext[_], @Argument(1) failure: Throwable): Unit =
+    actorMonitor(context.asScala.toClassic).onFailure(failure)
 
 }
 

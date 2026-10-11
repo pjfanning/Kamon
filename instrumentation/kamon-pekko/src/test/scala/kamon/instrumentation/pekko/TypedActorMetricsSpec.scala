@@ -15,7 +15,16 @@
 
 package kamon.instrumentation.pekko
 
-import org.apache.pekko.actor.typed.{ActorRef, ActorSystem, Behavior, DispatcherSelector, Props, SpawnProtocol}
+import org.apache.pekko.actor.typed.{
+  ActorRef,
+  ActorSystem,
+  Behavior,
+  DispatcherSelector,
+  Props,
+  SpawnProtocol,
+  SupervisorStrategy
+}
+import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import org.apache.pekko.actor.typed.scaladsl.AskPattern.Askable
 import org.apache.pekko.actor.typed.scaladsl.adapter._
 import org.apache.pekko.testkit.TestProbe
@@ -25,6 +34,7 @@ import kamon.instrumentation.pekko.ActorMetricsTestActor.TrackedTimings
 import kamon.instrumentation.pekko.PekkoMetrics._
 import kamon.instrumentation.pekko.TypedActorMetricsTestActor._
 import kamon.instrumentation.pekko.TypedActorMetricsTestParent.ToAllMembers
+import kamon.metric.Metric
 import kamon.tag.{Lookups, TagSet}
 import kamon.testkit.{InitAndStopKamonAfterAll, InstrumentInspection, MetricInspection}
 import org.scalatest.concurrent.Eventually
@@ -108,7 +118,7 @@ class TypedActorMetricsSpec extends AnyWordSpec
     }
 
     "tag typed actor metrics with the dispatcher picked by the DispatcherSelector" in {
-      spawnAndPing("tracked-typed-on-fjp", DispatcherSelector.fromConfig("tracked-fjp"))
+      spawnAndPing("tracked-typed-on-fjp", props = DispatcherSelector.fromConfig("tracked-fjp"))
 
       eventually {
         ActorProcessingTime.instruments(TagSet.of("path", s"$SystemName/user/tracked-typed-on-fjp")).keys
@@ -358,6 +368,82 @@ class TypedActorMetricsSpec extends AnyWordSpec
 
       stopAndAwaitTermination(parent, TypedActorMetricsTestParent.Stop)
     }
+
+    "count the errors of supervised members that are restarted" in {
+      val parent = spawn(TypedActorMetricsTestParent(3, restarting), "typed-supervised-errors")
+      pingAllMembers(parent, 3)
+
+      parent ! ToAllMembers(Fail)
+      parent ! ToAllMembers(Fail)
+      pingAllMembers(parent, 3)
+
+      eventually {
+        GroupErrors.withTags(groupTags("typed-group-supervised-errors")).value(resetState = false) shouldBe 6L
+      }
+      GroupMembers.withTags(groupTags("typed-group-supervised-errors")).distribution().max shouldBe 3
+
+      stopAndAwaitTermination(parent, TypedActorMetricsTestParent.Stop)
+    }
+  }
+
+  "the Kamon actor errors metric for typed actors" should {
+    "count the failure of an unsupervised typed actor, which stops it" in {
+      val actor = spawnAndPing("tracked-typed-unsupervised-failure")
+      stopAndAwaitTermination(actor, Fail)
+
+      // The stopped actor's instruments are only removed once the next snapshot has reported them
+      reportedErrors("tracked-typed-unsupervised-failure") shouldBe 1L
+    }
+
+    "count the failure a stop supervisor stops a typed actor for once" in {
+      val actor = spawnAndPing(
+        "tracked-typed-stop-supervised-failure",
+        Behaviors.supervise(TypedActorMetricsTestActor()).onFailure[Exception](SupervisorStrategy.stop)
+      )
+      stopAndAwaitTermination(actor, Fail)
+
+      reportedErrors("tracked-typed-stop-supervised-failure") shouldBe 1L
+    }
+
+    "count the failures a restart supervisor restarts a typed actor for" in {
+      assertErrorsCountedWhileAlive("tracked-typed-restart-supervised-failures", restarting)
+    }
+
+    "count the failures a restart supervisor restarts a typed actor for when its logging is disabled" in {
+      assertErrorsCountedWhileAlive(
+        "tracked-typed-restart-supervised-quiet-failures",
+        Behaviors.supervise(_).onFailure[Exception](SupervisorStrategy.restart.withLoggingEnabled(false))
+      )
+    }
+
+    "count the failures a resume supervisor resumes a typed actor for" in {
+      assertErrorsCountedWhileAlive(
+        "tracked-typed-resume-supervised-failures",
+        Behaviors.supervise(_).onFailure[Exception](SupervisorStrategy.resume)
+      )
+    }
+
+    "count the failures a backoff supervisor restarts a typed actor for" in {
+      assertErrorsCountedWhileAlive(
+        "tracked-typed-backoff-supervised-failures",
+        Behaviors.supervise(_).onFailure[Exception](
+          SupervisorStrategy.restartWithBackoff(10.millis, 50.millis, randomFactor = 0.0)
+        )
+      )
+    }
+
+    "count every failure when a restart supervisor reaches its restart limit and stops the typed actor" in {
+      val actor = spawnAndPing(
+        "tracked-typed-restart-limit-failures",
+        Behaviors.supervise(TypedActorMetricsTestActor())
+          .onFailure[Exception](SupervisorStrategy.restart.withLimit(2, 1.minute))
+      )
+      actor ! Fail
+      actor ! Fail
+      stopAndAwaitTermination(actor, Fail)
+
+      reportedErrors("tracked-typed-restart-limit-failures") shouldBe 3L
+    }
   }
 
   override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = 5.seconds, interval = 50.millis)
@@ -398,10 +484,11 @@ class TypedActorMetricsSpec extends AnyWordSpec
     */
   private def spawnAndPing(
     name: String,
+    behavior: Behavior[TypedActorMetricsTestActor.Command] = TypedActorMetricsTestActor(),
     props: Props = Props.empty,
     resetState: Boolean = false
   ): ActorRef[TypedActorMetricsTestActor.Command] = {
-    val actor = spawn(TypedActorMetricsTestActor(), name, props)
+    val actor = spawn(behavior, name, props)
     val probe = TestProbe()(system.classicSystem)
     actor ! Ping(probe.ref.toTyped[Pong.type])
     probe.expectMsg(10.seconds, Pong)
@@ -423,6 +510,43 @@ class TypedActorMetricsSpec extends AnyWordSpec
 
     actor
   }
+
+  private def restarting(behavior: Behavior[TypedActorMetricsTestActor.Command])
+    : Behavior[TypedActorMetricsTestActor.Command] =
+    Behaviors.supervise(behavior).onFailure[Exception](SupervisorStrategy.restart)
+
+  /**
+    * Fails a tracked typed actor three times, with the supervision added by the given function, and checks that the
+    * failures are counted and the actor is still alive and tracked.
+    */
+  private def assertErrorsCountedWhileAlive(
+    name: String,
+    supervise: Behavior[TypedActorMetricsTestActor.Command] => Behavior[TypedActorMetricsTestActor.Command]
+  ): Unit = {
+    val actor = spawnAndPing(name, supervise(TypedActorMetricsTestActor()))
+    (1 to 3).foreach(_ => actor ! Fail)
+
+    val probe = TestProbe()(system.classicSystem)
+    actor ! Ping(probe.ref.toTyped[Pong.type])
+    probe.expectMsg(10.seconds, Pong)
+
+    eventually {
+      ActorErrors.withTags(actorTags(name)).value(resetState = false) shouldBe 3L
+    }
+    ActorProcessingTime.tagValues("path") should contain(s"$SystemName/user/$name")
+  }
+
+  /**
+    * The errors reported for a typed actor, including those of a stopped actor whose instruments are flagged for
+    * removal (which the MetricInspection syntax doesn't show) but are still reported by the next snapshot.
+    */
+  private def reportedErrors(name: String): Long =
+    ActorErrors.asInstanceOf[Metric.Snapshotting[Metric.Settings.ForValueInstrument, Long]]
+      .snapshot(resetState = false)
+      .instruments
+      .filter(_.tags.get(Lookups.option("path")).contains(s"$SystemName/user/$name"))
+      .map(_.value)
+      .sum
 
   private def pingAllMembers(
     parent: ActorRef[TypedActorMetricsTestParent.Command],
