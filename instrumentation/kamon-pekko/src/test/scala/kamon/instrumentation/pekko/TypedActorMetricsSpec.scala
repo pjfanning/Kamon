@@ -524,11 +524,15 @@ class TypedActorMetricsSpec extends AnyWordSpec
     supervise: Behavior[TypedActorMetricsTestActor.Command] => Behavior[TypedActorMetricsTestActor.Command]
   ): Unit = {
     val actor = spawnAndPing(name, supervise(TypedActorMetricsTestActor()))
-    (1 to 3).foreach(_ => actor ! Fail)
-
     val probe = TestProbe()(system.classicSystem)
-    actor ! Ping(probe.ref.toTyped[Pong.type])
-    probe.expectMsg(10.seconds, Pong)
+
+    // Wait for the actor to recover after each failure: a backoff supervisor stashes messages while it restarts, and
+    // drops what's still stashed behind a message that fails when it's unstashed.
+    (1 to 3).foreach { _ =>
+      actor ! Fail
+      actor ! Ping(probe.ref.toTyped[Pong.type])
+      probe.expectMsg(10.seconds, Pong)
+    }
 
     eventually {
       ActorErrors.withTags(actorTags(name)).value(resetState = false) shouldBe 3L
