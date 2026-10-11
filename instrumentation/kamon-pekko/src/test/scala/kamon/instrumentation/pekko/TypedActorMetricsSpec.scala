@@ -196,8 +196,12 @@ class TypedActorMetricsSpec extends AnyWordSpec
 
   "the Kamon actor system metrics for a typed ActorSystem" should {
     "record active actor counts for spawned and stopped typed actors" in {
-      // TestProbes are actors too (and aren't stopped), so the same one is used throughout, created before the baseline
+      // TestProbes are actors too (and aren't stopped), so the same one is used throughout. Its actor starts
+      // asynchronously and is only counted once it has, so wait for it to process a message before the baseline.
       val probe = TestProbe()(system.classicSystem)
+      probe.ref ! "started"
+      probe.expectMsg(10.seconds, "started")
+
       val baseActorCount = eventually {
         val activeActors = systemMetrics.activeActors.distribution()
         activeActors.count should be > 0L
