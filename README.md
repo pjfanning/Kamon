@@ -1,5 +1,8 @@
 # Kamon Pekko instrumentation (fork)
 
+[![CI](https://github.com/pjfanning/Kamon/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/pjfanning/Kamon/actions/workflows/ci.yml?query=branch%3Amain)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.pjfanning/kamon-pekko_2.13)](https://central.sonatype.com/artifact/com.github.pjfanning/kamon-pekko_2.13)
+
 This is a fork of [Kamon](https://github.com/kamon-io/Kamon) that only builds and publishes Kamon's
 [Apache Pekko](https://pekko.apache.org/) and Play 3 instrumentation modules, with changes on top of the upstream code.
 
