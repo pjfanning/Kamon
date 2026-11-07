@@ -91,7 +91,7 @@ class ProducerMessageInstrumentationSpec extends AnyWordSpec with Matchers with 
     ProducerSettings(system, new StringSerializer, new StringSerializer).withProducer(producer)
 
   private class ContextCapturingProducer
-      extends MockProducer[String, String](true, new StringSerializer, new StringSerializer) {
+      extends MockProducer[String, String](true, null, new StringSerializer, new StringSerializer) {
     private val sentContexts = new ConcurrentLinkedQueue[Context]()
 
     def sentWithTags: Seq[Option[String]] =
