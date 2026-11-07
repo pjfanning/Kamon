@@ -200,7 +200,8 @@ class RouterMetricsSpec extends TestKit(ActorSystem("RouterMetricsSpec")) with S
       }
     }
 
-    "pick the right dispatcher name when the routees have a custom dispatcher set via deployment configuration" in new RouterMetricsFixtures {
+    "pick the right dispatcher name when the routees have a custom dispatcher set via deployment configuration" in
+    new RouterMetricsFixtures {
       val testProbe = TestProbe()
       val router =
         system.actorOf(FromConfig.props(Props[RouterMetricsTestActor]()), "picking-the-right-dispatcher-in-pool-router")
