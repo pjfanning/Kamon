@@ -20,19 +20,19 @@ object BaseProject extends AutoPlugin {
     lazy val Shaded = config("shaded").hide
 
     val kanelaAgent = "io.kamon" % "kanela-agent" % "2.0.0"
-    val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.17"
-    val slf4jnop = "org.slf4j" % "slf4j-nop" % "2.0.17"
-    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.3.15"
-    val scalatest = "org.scalatest" %% "scalatest" % "3.2.9"
+    val slf4jApi = "org.slf4j" % "slf4j-api" % "2.0.20"
+    val slf4jnop = "org.slf4j" % "slf4j-nop" % "2.0.20"
+    val logbackClassic = "ch.qos.logback" % "logback-classic" % "1.3.16"
+    val scalatest = "org.scalatest" %% "scalatest" % "3.2.20"
     val hdrHistogram = "org.hdrhistogram" % "HdrHistogram" % "2.1.10"
-    val okHttp = "com.squareup.okhttp3" % "okhttp" % "4.12.0"
+    val okHttp = "com.squareup.okhttp3" % "okhttp" % "4.12.1"
     val okHttpMockServer = "com.squareup.okhttp3" % "mockwebserver" % "4.10.0"
     val jsqlparser = "com.github.jsqlparser" % "jsqlparser" % "4.1"
     val oshiCore = "com.github.oshi" % "oshi-core" % "6.4.13"
 
     // Pekko versions the Pekko instrumentation modules are built and tested against
-    val pekkoVersion = "1.0.1"
-    val pekkoHttpVersion = "1.0.0"
+    val pekkoVersion = "1.7.1"
+    val pekkoHttpVersion = "1.4.2"
 
     val kanelaAgentVersion = settingKey[String]("Kanela Agent version")
     val javaReleaseVersion =
@@ -54,8 +54,8 @@ object BaseProject extends AutoPlugin {
       SettingKey[Boolean]("ideSkipProject") := true
     )
 
-    val `scala_2.13_version` = "2.13.13"
-    val scala_3_version = "3.3.5"
+    val `scala_2.13_version` = "2.13.18"
+    val scala_3_version = "3.3.9"
 
     def compileScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
     def testScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
@@ -155,7 +155,8 @@ object BaseProject extends AutoPlugin {
       "-language:higherKinds",
       "-language:existentials",
       "-language:implicitConversions"
-    ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
+    ) ++
+    (CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, 13)) => Seq("-g:vars", "-Ywarn-dead-code", "-Xlog-reflective-calls")
       case Some((3, _))  => Seq("-source:3.0-migration")
       case _             => Seq.empty
@@ -207,7 +208,7 @@ object BaseProject extends AutoPlugin {
       moduleFilter(organization = "io.kamon", name = "kanela-agent") &&
       artifactFilter(`type` = "jar")
     }.toList match {
-      case s @ Nil => throw new NoClassDefFoundError("No kanela agent jar found")
+      case s @ Nil  => throw new NoClassDefFoundError("No kanela agent jar found")
       case h +: Nil =>
         if (h.getName.matches(hasSemver)) println("Single matching kanela-agent jar found")
         else System.err.println("kanela-agent jar name did not contain version")
@@ -219,7 +220,7 @@ object BaseProject extends AutoPlugin {
             System.err.println("No jars matching semver ")
             s.head
           case v +: Nil => v
-          case more =>
+          case more     =>
             System.err.println("Multiple jars matching semver ")
             more.head
         }

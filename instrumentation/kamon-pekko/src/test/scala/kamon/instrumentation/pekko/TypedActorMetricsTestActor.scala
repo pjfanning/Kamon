@@ -42,10 +42,10 @@ object TypedActorMetricsTestActor {
   case object Pong
 
   def apply(): Behavior[Command] = Behaviors.receiveMessage {
-    case Discard      => Behaviors.same
-    case Fail         => throw new ArithmeticException("Division by zero.")
-    case Stop         => Behaviors.stopped
-    case Unhandleable => Behaviors.unhandled
+    case Discard       => Behaviors.same
+    case Fail          => throw new ArithmeticException("Division by zero.")
+    case Stop          => Behaviors.stopped
+    case Unhandleable  => Behaviors.unhandled
     case Ping(replyTo) =>
       replyTo ! Pong
       Behaviors.same

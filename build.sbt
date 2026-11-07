@@ -69,8 +69,8 @@ lazy val `kamon-pekko-http` = (project in file("instrumentation/kamon-pekko-http
       slf4jnop % "test",
       okHttp % "test",
       "org.apache.pekko" %% "pekko-http-testkit" % pekkoHttpVersion % "test",
-      "com.github.pjfanning" %% "pekko-http-json4s" % "2.0.0" % "test",
-      "org.json4s" %% "json4s-native" % "4.0.6" % "test"
+      "com.github.pjfanning" %% "pekko-http-json4s" % "2.8.0" % "test",
+      "org.json4s" %% "json4s-native" % "4.0.7" % "test"
     )
   )).dependsOn(`kamon-pekko`)
   .settings(libraryDependencies += kamonTestkit % "test")
@@ -86,9 +86,9 @@ lazy val `kamon-pekko-grpc` = (project in file("instrumentation/kamon-pekko-grpc
       "org.apache.pekko" %% "pekko-http" % pekkoHttpVersion % "provided",
       "org.apache.pekko" %% "pekko-stream" % pekkoVersion % "provided",
       "org.apache.pekko" %% "pekko-discovery" % pekkoVersion % "provided",
-      "com.thesamet.scalapb" %% "scalapb-runtime" % "0.11.8" % "provided",
-      "org.apache.pekko" %% "pekko-grpc-runtime" % "1.0.0" % "provided",
-      "io.grpc" % "grpc-stub" % "1.43.2" % "provided",
+      "com.thesamet.scalapb" %% "scalapb-runtime" % "0.11.21" % "provided",
+      "org.apache.pekko" %% "pekko-grpc-runtime" % "1.2.0" % "provided",
+      "io.grpc" % "grpc-stub" % "1.85.1" % "provided",
       scalatest % "test",
       slf4jApi % "test",
       logbackClassic % "test"
@@ -103,11 +103,11 @@ lazy val `kamon-pekko-connectors-kafka` = (project in file("instrumentation/kamo
     crossScalaVersions := Seq(`scala_2.13_version`, scala_3_version),
     libraryDependencies ++= Seq(
       kanelaAgent % "provided",
-      "org.apache.pekko" %% "pekko-connectors-kafka" % "1.0.0" % "provided",
+      "org.apache.pekko" %% "pekko-connectors-kafka" % "1.2.0" % "provided",
       "org.apache.pekko" %% "pekko-stream" % pekkoVersion % "provided",
       scalatest % "test",
       logbackClassic % "test",
-      "org.apache.pekko" %% "pekko-connectors-kafka-testkit" % "1.0.0" % "test" intransitive (),
+      "org.apache.pekko" %% "pekko-connectors-kafka-testkit" % "1.2.0" % "test" intransitive (),
       "org.apache.pekko" %% "pekko-testkit" % pekkoVersion % "test"
     )
   ).dependsOn(`kamon-pekko`)
