@@ -118,6 +118,19 @@ class DispatcherMetricsSpec extends TestKit(ActorSystem("DispatcherMetricsSpec")
 
       Await.result(system.terminate(), 5 seconds)
     }
+
+    "leave executors uninstrumented when the dispatcher name can't be determined" in {
+      forceInit(system.dispatchers.lookup("affinity-pool-dispatcher"))
+
+      val actor = system.actorOf(
+        Props[RouterMetricsTestActor]().withDispatcher("affinity-pool-dispatcher"),
+        "actor-on-affinity-pool"
+      )
+      actor ! Ping
+      expectMsg(Pong)
+
+      ExecutorMetrics.ThreadsActive.tagValues("name") shouldNot contain("affinity-pool-dispatcher")
+    }
   }
 
   def forceInit(dispatcher: MessageDispatcher): MessageDispatcher = {

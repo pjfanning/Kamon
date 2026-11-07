@@ -129,7 +129,10 @@ object InstrumentNewExecutorServiceOnPekko {
     val executor = callable.call()
     val dispatcherName = factory.dispatcherName
 
-    if (Kamon.filter(PekkoInstrumentation.TrackDispatcherFilterName).accept(dispatcherName)) {
+    // The dispatcher name is only known for the executor service factories created by the instrumented types (e.g.
+    // not for the affinity pool executor or custom executor configurators). Those executors are left uninstrumented
+    // because a null name would fail the filter and, with it, the creation of the executor.
+    if (dispatcherName != null && Kamon.filter(PekkoInstrumentation.TrackDispatcherFilterName).accept(dispatcherName)) {
       val actorSystemName = if (factory.dispatcherPrerequisites != null) {
         factory.dispatcherPrerequisites.settings.name
       } else {
