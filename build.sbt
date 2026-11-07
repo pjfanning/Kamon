@@ -27,11 +27,13 @@ lazy val kamon = (project in file("."))
   .aggregate(instrumentation)
 
 val instrumentationProjects = Seq[ProjectReference](
-  `kamon-pekko`,
-  `kamon-pekko-http`,
-  `kamon-pekko-grpc`,
-  `kamon-pekko-connectors-kafka`,
-  `kamon-play`
+  `kamon-pekko`
+  // TEMPORARY (Pekko 2 experiment, do not merge): re-enable once pekko-http, pekko-grpc and
+  // pekko-connectors-kafka have 2.x releases
+  // `kamon-pekko-http`,
+  // `kamon-pekko-grpc`,
+  // `kamon-pekko-connectors-kafka`,
+  // `kamon-play`
 )
 
 lazy val instrumentation = (project in file("instrumentation"))
@@ -55,6 +57,8 @@ lazy val `kamon-pekko` = (project in file("instrumentation/kamon-pekko"))
     )
   )
 
+// TEMPORARY (Pekko 2 experiment, do not merge): disabled until pekko-http, pekko-grpc and pekko-connectors-kafka have 2.x releases
+/*
 lazy val `kamon-pekko-http` = (project in file("instrumentation/kamon-pekko-http"))
   .enablePlugins(JavaAgent)
   .settings(instrumentationSettings)
@@ -126,3 +130,4 @@ lazy val `kamon-play` = (project in file("instrumentation/kamon-play"))
     `kamon-pekko`,
     `kamon-pekko-http`
   )
+ */

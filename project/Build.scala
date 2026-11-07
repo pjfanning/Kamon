@@ -31,7 +31,7 @@ object BaseProject extends AutoPlugin {
     val oshiCore = "com.github.oshi" % "oshi-core" % "6.4.13"
 
     // Pekko versions the Pekko instrumentation modules are built and tested against
-    val pekkoVersion = "1.0.1"
+    val pekkoVersion = "2.0.0"
     val pekkoHttpVersion = "1.0.0"
 
     val kanelaAgentVersion = settingKey[String]("Kanela Agent version")
@@ -54,8 +54,8 @@ object BaseProject extends AutoPlugin {
       SettingKey[Boolean]("ideSkipProject") := true
     )
 
-    val `scala_2.13_version` = "2.13.13"
-    val scala_3_version = "3.3.5"
+    val `scala_2.13_version` = "2.13.18"
+    val scala_3_version = "3.3.9"
 
     def compileScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "compile")
     def testScope(deps: ModuleID*): Seq[ModuleID] = deps map (_ % "test")
@@ -133,7 +133,7 @@ object BaseProject extends AutoPlugin {
       autoImport.`scala_2.13_version`,
       autoImport.`scala_3_version`
     ),
-    autoImport.javaReleaseVersion := "8",
+    autoImport.javaReleaseVersion := "17", // Pekko 2 requires Java 17
     javacOptions := {
       // javac on JDK 8 doesn't support --release
       if (scala.util.Properties.isJavaAtLeast("9")) Seq("--release", autoImport.javaReleaseVersion.value)
