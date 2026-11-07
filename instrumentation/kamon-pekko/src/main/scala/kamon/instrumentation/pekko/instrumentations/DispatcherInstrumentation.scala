@@ -88,8 +88,11 @@ class DispatcherInstrumentation extends InstrumentationBuilder {
       * Since Pekko 2.0, thread pool based ExecutorServiceFactory instances are created by
       * ThreadPoolExecutorServiceFactoryProvider (implemented by ThreadPoolExecutorConfigurator and the provider created
       * by PinnedDispatcher) instead of ThreadPoolConfig, so the dispatcher info must be copied from there.
+      *
+      * The trait's default method is advised rather than the implementing classes: their mixin forwarders are bridge
+      * methods on Scala 3, which don't get advised, while the forwarders on both Scala 2.13 and 3 delegate to it.
       */
-  onSubTypesOf("org.apache.pekko.dispatch.ThreadPoolExecutorServiceFactoryProvider")
+  onType("org.apache.pekko.dispatch.ThreadPoolExecutorServiceFactoryProvider")
     .advise(method("createExecutorServiceFactory"), classOf[CopyDispatcherInfoFromThreadPoolProvider])
 
 }
