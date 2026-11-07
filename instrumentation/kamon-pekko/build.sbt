@@ -35,3 +35,6 @@ lazy val baseTestSettings = Seq(
 inConfig(Test)(Defaults.testSettings ++ instrumentationSettings ++ baseTestSettings ++ Seq(
   crossScalaVersions := Seq(`scala_2.13_version`, scala_3_version)
 ))
+
+// Agrona (used by Pekko 2 Artery remoting) needs access to jdk.internal.misc
+Test / javaOptions += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"

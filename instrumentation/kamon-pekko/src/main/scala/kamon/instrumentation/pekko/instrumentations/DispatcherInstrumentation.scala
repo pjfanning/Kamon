@@ -25,7 +25,8 @@ import org.apache.pekko.dispatch.{
   ExecutorServiceFactoryProvider,
   ForkJoinExecutorConfigurator,
   PinnedDispatcherConfigurator,
-  ThreadPoolExecutorConfigurator
+  ThreadPoolExecutorConfigurator,
+  ThreadPoolExecutorServiceFactoryProvider
 }
 import kamon.Kamon
 import kamon.instrumentation.pekko.PekkoInstrumentation
@@ -83,6 +84,14 @@ class DispatcherInstrumentation extends InstrumentationBuilder {
     .mixin(classOf[HasDispatcherPrerequisites.Mixin])
     .advise(method("copy"), classOf[ThreadPoolConfigCopyAdvice])
 
+  /**
+      * Since Pekko 2.0, thread pool based ExecutorServiceFactory instances are created by
+      * ThreadPoolExecutorServiceFactoryProvider (implemented by ThreadPoolExecutorConfigurator and the provider created
+      * by PinnedDispatcher) instead of ThreadPoolConfig, so the dispatcher info must be copied from there.
+      */
+  onSubTypesOf("org.apache.pekko.dispatch.ThreadPoolExecutorServiceFactoryProvider")
+    .advise(method("createExecutorServiceFactory"), classOf[CopyDispatcherInfoFromThreadPoolProvider])
+
 }
 
 class CaptureDispatcherPrerequisitesOnExecutorConfigurator
@@ -116,6 +125,41 @@ object CopyDispatcherInfoToExecutorServiceFactory {
     val factoryWithMixins = factory.asInstanceOf[HasDispatcherName with HasDispatcherPrerequisites]
     factoryWithMixins.setDispatcherPrerequisites(poolConfig.dispatcherPrerequisites)
     factoryWithMixins.setDispatcherName(dispatcherName)
+  }
+}
+
+class CopyDispatcherInfoFromThreadPoolProvider
+object CopyDispatcherInfoFromThreadPoolProvider {
+
+  @Advice.OnMethodExit
+  @static def exit(
+    @Advice.This provider: Any,
+    @Advice.Argument(0) dispatcherName: String,
+    @Advice.Return factory: Any
+  ): Unit = {
+    // The prerequisites are captured on the ThreadPoolConfig (and carried over by ThreadPoolConfig.copy)
+    val fromPoolConfig = provider match {
+      case p: ThreadPoolExecutorServiceFactoryProvider =>
+        (p.threadPoolConfig: Any) match {
+          case h: HasDispatcherPrerequisites => h.dispatcherPrerequisites
+          case _                             => null
+        }
+      case _ => null
+    }
+    val prerequisites =
+      if (fromPoolConfig != null) fromPoolConfig
+      else
+        provider match {
+          case h: HasDispatcherPrerequisites => h.dispatcherPrerequisites
+          case _                             => null
+        }
+
+    factory match {
+      case f: HasDispatcherName with HasDispatcherPrerequisites =>
+        f.setDispatcherPrerequisites(prerequisites)
+        f.setDispatcherName(dispatcherName)
+      case _ =>
+    }
   }
 }
 
