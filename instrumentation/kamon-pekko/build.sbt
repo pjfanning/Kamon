@@ -36,5 +36,5 @@ inConfig(Test)(Defaults.testSettings ++ instrumentationSettings ++ baseTestSetti
   crossScalaVersions := Seq(`scala_2.13_version`, scala_3_version)
 ))
 
-// Agrona (used by Pekko 2 Artery remoting) needs access to jdk.internal.misc
+// Agrona (used by Artery remoting) needs access to jdk.internal.misc
 Test / javaOptions += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"

@@ -32,7 +32,7 @@ object BaseProject extends AutoPlugin {
 
     // Pekko versions the Pekko instrumentation modules are built and tested against
     val pekkoVersion = "2.0.0"
-    val pekkoHttpVersion = "2.0.0-M2" // TEMPORARY (Pekko 2 experiment): milestone until 2.0.0 is released
+    val pekkoHttpVersion = "2.0.0-M2"
 
     val kanelaAgentVersion = settingKey[String]("Kanela Agent version")
     val javaReleaseVersion =
@@ -133,12 +133,10 @@ object BaseProject extends AutoPlugin {
       autoImport.`scala_2.13_version`,
       autoImport.`scala_3_version`
     ),
-    autoImport.javaReleaseVersion := "17", // Pekko 2 requires Java 17
-    javacOptions := {
-      // javac on JDK 8 doesn't support --release
-      if (scala.util.Properties.isJavaAtLeast("9")) Seq("--release", autoImport.javaReleaseVersion.value)
-      else Seq("-source", "1.8", "-target", "1.8")
-    } ++ Seq(
+    autoImport.javaReleaseVersion := "17",
+    javacOptions := Seq(
+      "--release",
+      autoImport.javaReleaseVersion.value,
       "-Xlint:-options",
       "-encoding",
       "UTF-8",

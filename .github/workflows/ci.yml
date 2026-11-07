@@ -16,7 +16,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Pekko 2 requires Java 17+
         java: [ 17, 21 ]
     name: ci (java ${{ matrix.java }})
     steps:
