@@ -1,6 +1,6 @@
 import sbt.Tests._
 
-val `Play-3.0-version` = "3.0.7"
+val `Play-3.0-version` = "3.0.12"
 
 libraryDependencies ++= Seq(
   kanelaAgent % "provided",
@@ -11,7 +11,7 @@ libraryDependencies ++= Seq(
   "org.playframework" %% "play-pekko-http2-support" % `Play-3.0-version` % "test",
   "org.playframework" %% "play-test" % `Play-3.0-version` % "test",
   "org.playframework" %% "play-logback" % `Play-3.0-version` % "test",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % "test",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % "test",
   scalatest % "test"
 )
 
