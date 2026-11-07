@@ -62,13 +62,13 @@ abstract class RequestHandlerInstrumentationSpec(val confFile: String, val expec
     val action = app.injector.instanceOf(classOf[DefaultActionBuilder])
 
     {
-      case ("GET", "/ok") => handler(action { Ok })
+      case ("GET", "/ok")         => handler(action { Ok })
       case ("GET", "/request-id") =>
         handler(action { Ok(Kamon.currentContext().getTag(option("request-id")).getOrElse("undefined")) })
-      case ("GET", "/async")     => handler(action.async { Future { Ok } })
-      case ("GET", "/not-found") => handler(action { NotFound })
-      case ("GET", "/server")    => handler(action { req => Ok(serverImplementationName(req)) })
-      case ("GET", "/error")     => handler(action(_ => sys.error("This page generates an error!")))
+      case ("GET", "/async")          => handler(action.async { Future { Ok } })
+      case ("GET", "/not-found")      => handler(action { NotFound })
+      case ("GET", "/server")         => handler(action { req => Ok(serverImplementationName(req)) })
+      case ("GET", "/error")          => handler(action(_ => sys.error("This page generates an error!")))
       case ("GET", "/rename-outside") => {
         Kamon.currentSpan().name("renamed-outside-action")
         handler(action { req => Ok(serverImplementationName(req)) })

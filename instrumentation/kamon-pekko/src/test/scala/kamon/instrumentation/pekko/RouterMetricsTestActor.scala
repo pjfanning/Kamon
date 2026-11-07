@@ -23,10 +23,10 @@ import scala.concurrent.duration._
 class RouterMetricsTestActor extends Actor {
   import RouterMetricsTestActor._
   override def receive = {
-    case Discard =>
-    case Die     => context.stop(self)
-    case Fail    => throw new ArithmeticException("Division by zero.")
-    case Ping    => sender() ! Pong
+    case Discard                                  =>
+    case Die                                      => context.stop(self)
+    case Fail                                     => throw new ArithmeticException("Division by zero.")
+    case Ping                                     => sender() ! Pong
     case RouterTrackTimings(sendTimestamp, sleep) => {
       val dequeueTimestamp = Kamon.clock().nanos()
       sleep.map(s => Thread.sleep(s.toMillis))

@@ -118,7 +118,8 @@ class ActorGroupMetricsSpec extends TestKit(ActorSystem("ActorGroupMetricsSpec")
       }
     }
 
-    "cleanup pending-messages metric on member shutdown there are messages still being sent to the members" in new ActorGroupMetricsFixtures {
+    "cleanup pending-messages metric on member shutdown there are messages still being sent to the members" in
+    new ActorGroupMetricsFixtures {
       val parent = watch(system.actorOf(Props[SecondLevelGrouping](), "second-level-group"))
 
       eventually {

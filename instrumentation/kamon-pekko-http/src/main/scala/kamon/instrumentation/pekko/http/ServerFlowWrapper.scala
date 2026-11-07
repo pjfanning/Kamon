@@ -137,7 +137,8 @@ object ServerFlowWrapper {
                 requestHandler.buildResponse(toResponseBuilder(response), requestHandler.context)
 
               if (
-                response.status.intValue() == 404 && requestSpan.operationName() == httpServerInstrumentation.settings.defaultOperationName
+                response.status.intValue() == 404 &&
+                requestSpan.operationName() == httpServerInstrumentation.settings.defaultOperationName
               ) {
 
                 // It might happen that if no route was able to handle the request or no directive that would force taking

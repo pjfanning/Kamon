@@ -24,10 +24,10 @@ class ActorMetricsTestActor extends Actor {
   import ActorMetricsTestActor._
 
   override def receive = {
-    case Discard =>
-    case Die     => context.stop(self)
-    case Fail    => throw new ArithmeticException("Division by zero.")
-    case Ping    => sender() ! Pong
+    case Discard            =>
+    case Die                => context.stop(self)
+    case Fail               => throw new ArithmeticException("Division by zero.")
+    case Ping               => sender() ! Pong
     case Block(forDuration) =>
       Thread.sleep(forDuration.toMillis)
     case BlockAndDie(forDuration) =>
