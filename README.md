@@ -27,6 +27,11 @@ This fork's `kamon-play` supports Play 3 only (Pekko-based), which requires Java
 Kamon itself is not part of this fork. The modules depend on the `io.kamon` jars published on Maven Central:
 `kamon-core`, `kamon-instrumentation-common`, `kamon-scala-future`, `kamon-executors` and the `kanela-agent`.
 
+## Versions
+
+v3 supports Pekko 1.x.
+v4 supports Pekko 2.x. So far only milestone releases have been made for this line.
+
 ## Usage
 
 Add the modules you need alongside `kamon-core` (or the individual Kamon modules you use), for example with sbt:
