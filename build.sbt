@@ -69,7 +69,7 @@ lazy val `kamon-pekko-http` = (project in file("instrumentation/kamon-pekko-http
       slf4jnop % "test",
       okHttp % "test",
       "org.apache.pekko" %% "pekko-http-testkit" % pekkoHttpVersion % "test",
-      "com.github.pjfanning" %% "pekko-http-json4s" % "4.0.0-M4" % "test",
+      "com.github.pjfanning" %% "pekko-http-json4s" % "4.0.0" % "test",
       "io.github.json4s" %% "json4s-native" % "4.1.1" % "test"
     )
   )).dependsOn(`kamon-pekko`)
@@ -86,7 +86,7 @@ lazy val `kamon-pekko-grpc` = (project in file("instrumentation/kamon-pekko-grpc
       "org.apache.pekko" %% "pekko-http" % pekkoHttpVersion % "provided",
       "org.apache.pekko" %% "pekko-stream" % pekkoVersion % "provided",
       "org.apache.pekko" %% "pekko-discovery" % pekkoVersion % "provided",
-      "com.thesamet.scalapb" %% "scalapb-runtime" % "1.0.0-alpha.5" % "provided",
+      "com.thesamet.scalapb" %% "scalapb-runtime" % "1.0.0-alpha.6" % "provided",
       "org.apache.pekko" %% "pekko-grpc-runtime" % "2.0.0-M2" % "provided",
       "io.grpc" % "grpc-stub" % "1.81.0" % "provided",
       scalatest % "test",
