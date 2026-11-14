@@ -32,7 +32,7 @@ object BaseProject extends AutoPlugin {
 
     // Pekko versions the Pekko instrumentation modules are built and tested against
     val pekkoVersion = "2.0.0"
-    val pekkoHttpVersion = "2.0.0-M2"
+    val pekkoHttpVersion = "2.0.0"
 
     val kanelaAgentVersion = settingKey[String]("Kanela Agent version")
     val javaReleaseVersion =
