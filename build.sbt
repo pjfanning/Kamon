@@ -81,6 +81,8 @@ lazy val `kamon-pekko-grpc` = (project in file("instrumentation/kamon-pekko-grpc
   .settings(Seq(
     PB.additionalDependencies := Seq.empty,
     crossScalaVersions := Seq(`scala_2.13_version`, scala_3_version),
+    // pekko-grpc generates Scala 3 `given` definitions, which -source:3.0-migration rejects
+    scalacOptions -= "-source:3.0-migration",
     libraryDependencies ++= Seq(
       kanelaAgent % "provided",
       "org.apache.pekko" %% "pekko-http" % pekkoHttpVersion % "provided",
